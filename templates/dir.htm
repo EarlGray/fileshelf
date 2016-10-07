@@ -1,0 +1,10 @@
+{% extends "tmpl.htm" %}
+{% block body %}
+<h1>/{{ path }}</h1>
+<hr/>
+<ul id="ls">
+  {% for fname, entry in lsdir.iteritems() %}
+  <li><a href="{{ entry.href }}">{{ fname }}</a></li>
+  {% endfor %}
+</ul>
+{% endblock %}
