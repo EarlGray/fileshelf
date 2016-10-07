@@ -1,6 +1,8 @@
 {% extends "tmpl.htm" %}
 {% block body %}
-<h2>/{{ path }}</h2>
+<h2>
+  <a href="/my">FS:</a> {% for prefix, href in path_prefixes %} / <a href="{{ href }}">{{ prefix }}</a>{% endfor %}
+</h2>
 <hr/>
 <ul id="ls">
   {% for fname, entry in lsdir.iteritems() %}
