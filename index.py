@@ -1,6 +1,7 @@
 import os
 import flask
 from flask import Flask
+from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
 storage_dir = None
@@ -13,9 +14,25 @@ def homepage_handler():
 
 @app.route('/my', defaults={'path': ''}, methods=['GET', 'POST'])
 @app.route('/my/<path:path>', methods=['GET', 'POST'])
-def my_path_handler(path):
+def path_handler(path):
     dpath = os.path.join(storage_dir, path)
     print '#### listdir %s' % dpath
+
+    req = flask.request
+    if req.method == 'POST':
+        if 'file' not in req.files:
+            return flask.render_template('500.htm', e='no file'), 400
+
+        url = os.path.join('/my', os.path.dirname(path))
+        f = req.files['file']
+        fpath = os.path.join(storage_dir, path, secure_filename(f.filename))
+        print 'Saving file as %s' % fpath
+        try:
+            f.save(fpath)
+        except OSError as e:
+            return flask.render_template('500.htm', e=e), 500
+        print 'Success, redirecting back to %s' % url
+        return flask.redirect(url)
 
     if not os.path.exists(dpath):
         return flask.render_template('404.htm'), 404
