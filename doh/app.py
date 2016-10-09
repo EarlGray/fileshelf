@@ -37,7 +37,7 @@ class DohApp:
             auth = req.headers.get('Authorization')
             user = ''
             if auth and auth.startswith('Basic '):
-                user = 'by user=%' % b64decode(auth.split()[1]).split(':')[0]
+                user = 'by user=%s' % b64decode(auth.split()[1]).split(':')[0]
             print('#### %s %s %s => <%s>' % (req.method, path, user, dpath))
 
             if req.method == 'POST':
