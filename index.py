@@ -6,8 +6,6 @@ from flask import Flask
 from werkzeug.utils import secure_filename
 
 
-storage_dir = None
-static_dir = None
 my_url = '/my'
 
 
@@ -23,8 +21,8 @@ def path_prefixes(path):
         res.append((d, url))
     return res
 
+
 app = Flask(__name__)
-app.debug = False
 
 
 @app.route('/')
@@ -37,18 +35,17 @@ def homepage_handler():
 def path_handler(path):
     req = flask.request
 
-    dpath = os.path.join(storage_dir, path)
+    dpath = os.path.join(app.storage_dir, path)
     print '#### %s <%s> => listdir <%s>' % (req.method, path, dpath)
 
     if req.method == 'POST':
         if 'file' not in req.files:
             return flask.render_template('500.htm', e='no file'), 400
 
-        url = os.path.join(my_url, path)
-        url.strip(os.path.sep)
+        url = url_join(my_url, path)
 
         f = req.files['file']
-        fpath = os.path.join(storage_dir, path, secure_filename(f.filename))
+        fpath = os.path.join(app.storage_dir, path, secure_filename(f.filename))
         print 'Saving file as %s' % fpath
         try:
             f.save(fpath)
@@ -61,6 +58,7 @@ def path_handler(path):
         return flask.render_template('404.htm'), 404
 
     if not os.path.isdir(dpath):
+        # TODO: for large files, redirect to nginx-served address
         return flask.send_file(dpath)
 
     lsdir = []
@@ -86,7 +84,7 @@ def path_handler(path):
 @app.route('/res/<path:path>')
 def static_handler(path):
     fname = secure_filename(path)
-    fname = os.path.join(static_dir, fname)
+    fname = os.path.join(app.static_dir, fname)
     if not os.path.exists(fname):
         return flask.render_template('404.htm', path=path), 404
 
@@ -107,11 +105,13 @@ def not_found(e):
 def internal_error(e):
     return flask.render_template('500.htm', e=e), 500
 
+
 if __name__ == '__main__':
-    storage_dir = os.path.join(os.getcwd(), 'storage')
-    static_dir = os.path.join(os.getcwd(), 'static')
+    app.storage_dir = os.path.join(os.getcwd(), 'storage')
+    app.static_dir = os.path.join(os.getcwd(), 'static')
 
     for k, v in app.config.iteritems():
         print '%s\t: %s' % (k, v)
 
+    app.debug = True
     app.run(host='0.0.0.0', port=5000)
