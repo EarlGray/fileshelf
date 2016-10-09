@@ -94,6 +94,11 @@ class DohApp:
             return flask.send_file(fname)
 
 
+        @app.route('/')
+        def home_handler():
+            return flask.redirect(flask.url_for('path_handler')), 302
+
+
         @app.errorhandler(404)
         def not_found(e):
             return flask.render_template('404.htm'), 404
@@ -103,10 +108,10 @@ class DohApp:
         def internal_error(e):
             return flask.render_template('500.htm', e=e), 500
 
-        
+
         self.app = app
 
-    
+
     def run(self):
         self.app.run(host=self.conf['host'], port=self.conf['port'])
 

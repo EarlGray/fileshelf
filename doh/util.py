@@ -2,14 +2,15 @@ import os.path
 
 from flask import url_for
 
-def default_conf():
+def default_conf(appdir):
     return {
         'host': '127.0.0.1',
         'port': 5000,
         'rooturl': '/',
         'debug': False,
-        'storage_dir': os.path.join(os.getcwd(), 'storage'),
-        'static_dir': os.path.join(os.getcwd(), 'static') 
+        'application_dir': appdir,
+        'storage_dir': os.path.join(appdir, 'storage'),
+        'static_dir': os.path.join(appdir, 'static')
     }
 
 my_url = '/my'
