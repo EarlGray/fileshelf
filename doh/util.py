@@ -1,5 +1,7 @@
 import os.path
 
+from flask import url_for
+
 def default_conf():
     return {
         'host': '127.0.0.1',
@@ -19,7 +21,7 @@ def url_join(*args):
 
 def path_prefixes(path):
     """ generates a list of [(path_chunk, path_href)] """
-    url = my_url
+    url = url_for('path_handler')
     res = []
     for d in path.split('/'):
         url = url_join(url, d)

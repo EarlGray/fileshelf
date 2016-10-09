@@ -13,4 +13,5 @@ if __name__ == '__main__':
             uconf = json.load(f)
             conf.update(uconf)
 
-    DohApp(conf).run()
+    app = DohApp(conf)
+    app.run()

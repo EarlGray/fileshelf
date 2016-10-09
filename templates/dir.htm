@@ -1,7 +1,7 @@
 {% extends "tmpl.htm" %}
 {% block body %}
 <h2>
-  <a href="/my">FS:</a> {% for prefix, href in path_prefixes %} / <a href="{{ href }}">{{ prefix }}</a>{% endfor %}
+  <a href="{{ url_for('path_handler') }}">FS:</a> {% for prefix, href in path_prefixes %} / <a href="{{ href }}">{{ prefix }}</a>{% endfor %}
 </h2>
 <hr/>
 <table>
@@ -12,7 +12,7 @@
   </tr>
   {% for entry in lsdir %}
   <tr>
-    <td>{% if entry.isdir %}<img src="/res/dir.png" alt="dir" width="16"/>{% endif %}</td>
+    <td>{% if entry.isdir %}<img src="{{ url_for('static_handler', path='dir.png') }}" alt="dir" width="16"/>{% endif %}</td>
     <td><a href="{{ entry.href }}">{{ entry.name }}</a></td>
     <td>{{ entry.size }}</td>
   </tr> {% endfor %}

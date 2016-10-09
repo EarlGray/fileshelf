@@ -2,12 +2,14 @@ from __future__ import print_function
 
 import os
 import stat
+from base64 import decodestring as b64decode
 
 import flask
 from flask import Flask
 from werkzeug.utils import secure_filename
 
 from doh.util import *
+from doh.rproxy import ReverseProxied
 
 
 class DohApp:
@@ -20,12 +22,11 @@ class DohApp:
         app.storage_dir = conf['storage_dir']
         app.static_dir = conf['static_dir']
 
+        # monkey-patch the environment to handle 'X-Forwarder-For'
+        # 'X-Forwarded-Proto', etc:
+        app.wsgi_app = ReverseProxied(app.wsgi_app)
+
         self.conf = conf
-
-        @app.route('/')
-        def homepage_handler():
-            return flask.redirect(my_url, 302)
-
 
         @app.route(my_url, defaults={'path': ''}, methods=['GET', 'POST'])
         @app.route(url_join(my_url, '<path:path>'), methods=['GET', 'POST'])
@@ -33,13 +34,16 @@ class DohApp:
             req = flask.request
 
             dpath = os.path.join(app.storage_dir, path)
-            print('#### %s <%s> => listdir <%s>' % (req.method, path, dpath))
+            auth = req.headers.get('Authorization')
+            if auth and auth.startswith('Basic '):
+                user = b64decode(auth.split()[1]).split(':')[0]
+            print('#### %s %s by user=%s => <%s>' % (req.method, path, user, dpath))
 
             if req.method == 'POST':
                 if 'file' not in req.files:
                     return flask.render_template('500.htm', e='no file'), 400
 
-                url = url_join(my_url, path)
+                url = flask.url_for('path_handler', path=path)
 
                 f = req.files['file']
                 fpath = os.path.join(app.storage_dir, path, secure_filename(f.filename))
@@ -62,9 +66,10 @@ class DohApp:
             try:
                 for fname in os.listdir(dpath):
                     st = os.lstat(os.path.join(dpath, fname))
+                    href = flask.url_for('path_handler', path=url_join(path, fname))
                     lsdir.append({
                         'name': fname,
-                        'href': url_join(my_url, path, fname),
+                        'href': href,
                         'size': st.st_size,
                         'isdir': stat.S_ISDIR(st.st_mode)
                     })
@@ -85,7 +90,7 @@ class DohApp:
             if not os.path.exists(fname):
                 return flask.render_template('404.htm', path=path), 404
 
-            print('Serving %s' % fname)
+            # print('Serving %s' % fname)
             return flask.send_file(fname)
 
 
