@@ -35,9 +35,10 @@ class DohApp:
 
             dpath = os.path.join(app.storage_dir, path)
             auth = req.headers.get('Authorization')
+            user = ''
             if auth and auth.startswith('Basic '):
-                user = b64decode(auth.split()[1]).split(':')[0]
-            print('#### %s %s by user=%s => <%s>' % (req.method, path, user, dpath))
+                user = 'by user=%' % b64decode(auth.split()[1]).split(':')[0]
+            print('#### %s %s %s => <%s>' % (req.method, path, user, dpath))
 
             if req.method == 'POST':
                 if 'file' not in req.files:
@@ -46,7 +47,8 @@ class DohApp:
                 url = flask.url_for('path_handler', path=path)
 
                 f = req.files['file']
-                fpath = os.path.join(app.storage_dir, path, secure_filename(f.filename))
+                fpath = os.path.join(app.storage_dir, path,
+                                     secure_filename(f.filename))
                 print('Saving file as %s' % fpath)
                 try:
                     f.save(fpath)
@@ -66,7 +68,8 @@ class DohApp:
             try:
                 for fname in os.listdir(dpath):
                     st = os.lstat(os.path.join(dpath, fname))
-                    href = flask.url_for('path_handler', path=url_join(path, fname))
+                    href = flask.url_for('path_handler',
+                                         path=url_join(path, fname))
                     lsdir.append({
                         'name': fname,
                         'href': href,
@@ -75,13 +78,13 @@ class DohApp:
                     })
                 templvars = {
                     'path': path,
-                    'lsdir': sorted(lsdir, key=lambda d: (not d['isdir'], d['name'])),
+                    'lsdir': sorted(lsdir,
+                                    key=lambda d: (not d['isdir'], d['name'])),
                     'path_prefixes': path_prefixes(path)
                 }
                 return flask.render_template('dir.htm', **templvars)
             except OSError:
                 return flask.render_template('404.htm', path=path), 404
-
 
         @app.route('/res/<path:path>')
         def static_handler(path):
@@ -93,25 +96,20 @@ class DohApp:
             # print('Serving %s' % fname)
             return flask.send_file(fname)
 
-
         @app.route('/')
         def home_handler():
             return flask.redirect(flask.url_for('path_handler')), 302
-
 
         @app.errorhandler(404)
         def not_found(e):
             return flask.render_template('404.htm'), 404
 
-
         @app.errorhandler(500)
         def internal_error(e):
             return flask.render_template('500.htm', e=e), 500
-
 
         self.app = app
 
 
     def run(self):
         self.app.run(host=self.conf['host'], port=self.conf['port'])
-
