@@ -42,7 +42,8 @@ class DohApp:
 
             if req.method == 'POST':
                 if 'file' not in req.files:
-                    return flask.render_template('500.htm', e='no file'), 400
+                    args = {'title': 'server error', 'e': 'no file'}
+                    return flask.render_template('500.htm', **args), 400
 
                 url = flask.url_for('path_handler', path=path)
 
@@ -53,12 +54,13 @@ class DohApp:
                 try:
                     f.save(fpath)
                 except OSError as e:
-                    return flask.render_template('500.htm', e=e), 500
+                    args = {'title': 'saving error', 'e': e}
+                    return flask.render_template('500.htm', **args), 500
                 print('Success, redirecting back to %s' % url)
                 return flask.redirect(url)
 
             if not os.path.exists(dpath):
-                return flask.render_template('404.htm'), 404
+                return flask.render_template('404.htm', title='not found'), 404
 
             if not os.path.isdir(dpath):
                 # TODO: for large files, redirect to nginx-served address
@@ -80,18 +82,21 @@ class DohApp:
                     'path': path,
                     'lsdir': sorted(lsdir,
                                     key=lambda d: (not d['isdir'], d['name'])),
-                    'path_prefixes': path_prefixes(path)
+                    'path_prefixes': path_prefixes(path),
+                    'title': path
                 }
                 return flask.render_template('dir.htm', **templvars)
             except OSError:
-                return flask.render_template('404.htm', path=path), 404
+                args = {'path': path, 'title': 'no ' + path}
+                return flask.render_template('404.htm', **args), 404
 
         @app.route('/res/<path:path>')
         def static_handler(path):
             fname = secure_filename(path)
             fname = os.path.join(app.static_dir, fname)
             if not os.path.exists(fname):
-                return flask.render_template('404.htm', path=path), 404
+                args = {'path': path, 'title': 'no ' + path}
+                return flask.render_template('404.htm', **args), 404
 
             # print('Serving %s' % fname)
             return flask.send_file(fname)
@@ -102,14 +107,14 @@ class DohApp:
 
         @app.errorhandler(404)
         def not_found(e):
-            return flask.render_template('404.htm'), 404
+            return flask.render_template('404.htm', title='not found'), 404
 
         @app.errorhandler(500)
         def internal_error(e):
-            return flask.render_template('500.htm', e=e), 500
+            args = {'title': 'server error', 'e': e}
+            return flask.render_template('500.htm', **args), 500
 
         self.app = app
-
 
     def run(self):
         self.app.run(host=self.conf['host'], port=self.conf['port'])
