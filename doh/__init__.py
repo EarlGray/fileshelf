@@ -1,4 +1,3 @@
-from doh.app import DohApp
-from doh.util import default_conf
+from doh.app import DohApp, default_conf
 
-__all__ = ['create', 'default_conf']
+__all__ = ['create', 'default_conf', 'DohApp']
