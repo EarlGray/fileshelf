@@ -1,0 +1,17 @@
+a {
+  text-decoration: none;
+}
+
+.dir-entry-row:hover {
+  background-color: #f8f8f8;
+}
+
+.hoverable { display: none }
+
+.dir-entry-row:hover .hoverable {
+  display: block;
+}
+
+.entry-info { text-decoration: italic; }
+
+/* vim: set sts=2 sw=2 */

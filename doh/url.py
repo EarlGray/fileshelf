@@ -1,6 +1,8 @@
 from flask import url_for
 
 my = '/my'
+pub = '/pub'
+res = '/res'
 
 
 def join(*args):

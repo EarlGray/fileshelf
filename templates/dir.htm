@@ -11,15 +11,28 @@
     <th>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; bytes &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</th>
   </tr>
   {% for entry in lsdir %}
-  <tr>
+  <tr class="dir-entry-row">
     <td>{% if entry.isdir %}<img src="{{ url_for('static_handler', path='dir.png') }}" alt="dir" width="16"/>{% endif %}</td>
     <td><a href="{{ entry.href }}">{{ entry.name }}</a></td>
     <td>{{ entry.size }}</td>
+    <td>
+      {% if entry.shared %}
+      <a class="entry-info" href="{{ entry.shared }}">shared</a>
+      {% elif not entry.isdir %}
+      <form class="hoverable" action="" method="POST">
+        <input type="hidden" name="action" value="share">
+        <input type="hidden" name="file" value="{{ entry.name }}">
+        <input type="submit" name="share" value="share">
+      </form>
+      {% endif %}
+    </td>
   </tr> {% endfor %}
 </table>
 <hr/>
 <form action="" method="POST" enctype="multipart/form-data">
+  <input type="hidden" name="action" value="upload">
   <input type="file" name="file"/>
-  <input type="submit" value="Upload"/>
+  <input type="submit" name="upload" value="Upload"/>
 </form>
 {% endblock %}
+<!-- vim : set sts=2 sw=2 -->
