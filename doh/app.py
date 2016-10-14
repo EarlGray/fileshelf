@@ -43,6 +43,19 @@ class DohApp:
 
         self.conf = conf
 
+
+        @app.errorhandler(404)
+        def not_found(e):
+            return self.r404()
+
+        @app.errorhandler(500)
+        def internal_error(e):
+            return self.r500(e)
+
+        @app.route('/')
+        def home_handler():
+            return flask.redirect(flask.url_for('path_handler')), 302
+
         @app.route(url.my, defaults={'path': ''}, methods=['GET', 'POST'])
         @app.route(url.join(url.my, '<path:path>'), methods=['GET', 'POST'])
         def path_handler(path):
@@ -60,8 +73,7 @@ class DohApp:
                 action = req.form['action']
                 if action == 'upload':
                     if 'file' not in req.files:
-                        args = {'title': 'server error', 'e': 'no file'}
-                        return flask.render_template('500.htm', **args), 400
+                        return self.r500('no file in POST')
 
                     return self._upload(req, path)
                 if action == 'share':
@@ -70,7 +82,7 @@ class DohApp:
                 return flask.Response('unknown action %s' % action), 400
 
             if not os.path.exists(dpath):
-                return flask.render_template('404.htm', title='not found'), 404
+                return self.r404(path)
 
             if not os.path.isdir(dpath):
                 # TODO: for large files, redirect to nginx-served address
@@ -83,8 +95,7 @@ class DohApp:
             fname = secure_filename(path)
             fname = os.path.join(app.static_dir, fname)
             if not os.path.exists(fname):
-                args = {'path': path, 'title': 'no ' + path}
-                return flask.render_template('404.htm', **args), 404
+                return self.r404(path)
 
             # print('Serving %s' % fname)
             return flask.send_file(fname)
@@ -94,30 +105,27 @@ class DohApp:
             fname = secure_filename(path)
             fname = os.path.join(app.share_dir, fname)
             if not os.path.exists(fname):
-                args = {'path': path, 'title': 'no ' + path}
-                return flask.render_template('404.htm', **args), 404
+                return self.r404(path)
 
             # print('Serving %s' % fname)
             return flask.send_file(fname)
-
-        @app.route('/')
-        def home_handler():
-            return flask.redirect(flask.url_for('path_handler')), 302
-
-        @app.errorhandler(404)
-        def not_found(e):
-            return flask.render_template('404.htm', title='not found'), 404
-
-        @app.errorhandler(500)
-        def internal_error(e):
-            args = {'title': 'server error', 'e': e}
-            return flask.render_template('500.htm', **args), 500
 
         self.app = app
 
     def run(self):
         self.app.run(host=self.conf['host'], port=self.conf['port'])
 
+    def r400(self, why):
+        args = {'title': 'not accepted', 'e': why}
+        return flask.render_template('500.htm', **args), 400
+
+    def r404(self, path=None):
+        args = {'path': path, 'title': 'no ' + path if path else 'not found'}
+        return flask.render_template('404.htm', **args), 404
+
+    def r500(self, e=None):
+        args = {'title': 'server error', 'e': e}
+        return flask.render_template('500.htm', **args), 500
 
     def _scan_share(self, share_dir):
         share = {}
@@ -141,7 +149,7 @@ class DohApp:
                 shared = self.shared.get(fpath)
                 if shared:
                     shared = flask.url_for('pub_handler', path=shared)
-                # print('dpath=%s, shared=%s' % (fpath, shared))
+                print('dpath=%s, shared=%s' % (fpath, shared))
                 lsdir.append({
                     'name': fname,
                     'href': href,
@@ -171,8 +179,8 @@ class DohApp:
         try:
             f.save(fpath)
         except OSError as e:
-            args = {'title': 'saving error', 'e': e}
-            return flask.render_template('500.htm', **args), 500
+            return self.r500(e)
+
         print('Success, redirecting back to %s' % redir_url)
         return flask.redirect(redir_url)
 
@@ -181,15 +189,17 @@ class DohApp:
         try:
             fname = req.form.get('file')
             if not fname:
-                return flask.render_template('400.htm'), 400
+                return self.r400('no `file` in POST')
+
             fname = secure_filename(fname)
             fpath = os.path.join(dpath, fname)
             link = os.path.join(self.app.share_dir, fname)
             # TODO: check if already shared
             # TODO: check for existing links
+
             os.symlink(fpath, link)
             self.shared[fname] = fpath
             print('shared:', fname, ' => ', fpath)
             return flask.redirect(flask.url_for('path_handler', path=path))
         except OSError as e:
-            return flask.render_template('500.htm', e=e), 500
+            return self.r500(e)
