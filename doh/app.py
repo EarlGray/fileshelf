@@ -147,9 +147,9 @@ class DohApp:
                 href = flask.url_for('path_handler',
                                      path=url.join(path, fname))
                 shared = self.shared.get(fpath)
+                print('fpath=%s, shared=%s' % (fpath, shared))
                 if shared:
                     shared = flask.url_for('pub_handler', path=shared)
-                print('dpath=%s, shared=%s' % (fpath, shared))
                 lsdir.append({
                     'name': fname,
                     'href': href,
@@ -173,6 +173,8 @@ class DohApp:
         redir_url = flask.url_for('path_handler', path=path)
 
         f = req.files['file']
+        if not f.filename:
+            return flask.redirect(redir_url)
         fpath = os.path.join(self.app.storage_dir, path,
                              secure_filename(f.filename))
         print('Saving file as %s' % fpath)
@@ -198,8 +200,8 @@ class DohApp:
             # TODO: check for existing links
 
             os.symlink(fpath, link)
-            self.shared[fname] = fpath
-            print('shared:', fname, ' => ', fpath)
+            self.shared[fpath] = fname
+            print('shared:', fpath, ' => ', fname)
             return flask.redirect(flask.url_for('path_handler', path=path))
         except OSError as e:
             return self.r500(e)
