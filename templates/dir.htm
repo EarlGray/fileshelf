@@ -8,16 +8,25 @@
   <tr>
     <th></th>
     <th>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; filename &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</th>
-    <th>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; bytes &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</th>
+    <th>&nbsp;&nbsp;&nbsp;&nbsp; type &nbsp;&nbsp;&nbsp;</th>
+    <th>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; size &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</th>
+    <th>&nbsp;&nbsp;&nbsp;&nbsp; access &nbsp;&nbsp;&nbsp;&nbsp;</th>
+    <th>action</th>
   </tr>
   {% for entry in lsdir %}
   <tr class="dir-entry-row">
-    <td>{% if entry.isdir %}<img src="{{ url_for('static_handler', path='dir.png') }}" alt="dir" width="16"/>{% endif %}</td>
-    <td><a href="{{ entry.href }}">{{ entry.name }}</a></td>
-    <td>{{ entry.size }}</td>
-    <td>
+    <td class="dir-entry-icon">{% if entry.isdir %}
+      <img src="{{ url_for('static_handler', path='dir.png') }}" alt="dir" width="16"/>
+      {% else %}
+      <img src="{{ url_for('static_handler', path='file.png') }}" alt="file" width="16"/>
+      {% endif %}
+    </td>
+    <td class="dir-entry-name"><a href="{{ entry.href }}">{{ entry.name }}</a></td>
+    <td class="small dir-entry-type">{{ entry.mime }}</td>
+    <td class="pull-right dir-entry-size">{{ entry.size }}</td>
+    <td class="pull-right dir-entry-access">
       {% if entry.shared %}
-      <a class="entry-info" href="{{ entry.shared }}">shared</a>
+      <a class="entry-info" href="{{ entry.shared }}">public</a>
       {% elif not entry.isdir %}
       <form class="hoverable" action="" method="POST">
         <input type="hidden" name="action" value="share">
@@ -25,6 +34,18 @@
         <input type="submit" name="share" value="share">
       </form>
       {% endif %}
+    </td>
+    <td class="dir-entry-action">
+      <form class="hoverable" action="" method="POST">
+        <input type="hidden" name="action" value="rename">
+        <input type="hidden" name="file" value="{{ entry.name }}">
+        <input type="submit" name="rename" value="rename">
+      </form>
+      <form class="hoverable" action="" method="POST">
+        <input type="hidden" name="action" value="delete">
+        <input type="hidden" name="file" value="{{ entry.name }}">
+        <input type="submit" name="delete" value="trash">
+      </form>
     </td>
   </tr> {% endfor %}
 </table>

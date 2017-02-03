@@ -2,6 +2,7 @@ from __future__ import print_function
 
 import os
 import stat
+import mimetypes
 from base64 import decodestring as b64decode
 
 import flask
@@ -131,7 +132,8 @@ class DohApp:
         share = {}
         for link in os.listdir(share_dir):
             lpath = os.path.join(share_dir, link)
-            if not os.path.islink(lpath): continue
+            if not os.path.islink(lpath):
+                continue
 
             source = os.readlink(lpath)
             print('share: %s => %s' % (link, source))
@@ -147,12 +149,14 @@ class DohApp:
                 href = flask.url_for('path_handler',
                                      path=url.join(path, fname))
                 shared = self.shared.get(fpath)
+                mimetype = mimetypes.guess_type(fpath)
                 print('fpath=%s, shared=%s' % (fpath, shared))
                 if shared:
                     shared = flask.url_for('pub_handler', path=shared)
                 lsdir.append({
                     'name': fname,
                     'href': href,
+                    'mime': mimetype[0] or '',
                     'size': st.st_size,
                     'shared': shared,
                     'isdir': stat.S_ISDIR(st.st_mode)

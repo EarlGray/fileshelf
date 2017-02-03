@@ -8,10 +8,26 @@ a {
 
 .hoverable { display: none }
 
+.dir-entry-row {
+  margin-top: 0.2em;
+  margin-bottom: 0.2em;
+}
 .dir-entry-row:hover .hoverable {
-  display: block;
+  display: inline-block;
+}
+.dir-entry-size {
+  padding-left: 1em;
+}
+.dir-entry-name {
+  word-wrap: break-word;
+  min-width: 12em;
+  max-width: 30em;
+  padding-right: 1em;
 }
 
 .entry-info { text-decoration: italic; }
+
+.pull-right { text-align: right; }
+.small { font-size: 80%; } 
 
 /* vim: set sts=2 sw=2 */
