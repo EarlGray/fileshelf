@@ -2,6 +2,7 @@ from __future__ import print_function
 
 import os
 import stat
+import shutil
 import mimetypes
 from base64 import decodestring as b64decode
 
@@ -44,7 +45,6 @@ class DohApp:
 
         self.conf = conf
 
-
         @app.errorhandler(404)
         def not_found(e):
             return self.r404()
@@ -79,6 +79,13 @@ class DohApp:
                     return self._upload(req, path)
                 if action == 'share':
                     return self._share(dpath, path)
+                if action == 'rename':
+                    oldname = req.form.get('oldname')
+                    newname = req.form.get('newname')
+                    return self._rename(path, oldname, newname)
+                if action == 'delete':
+                    fname = req.form.get('filename')
+                    return self._delete(path, fname)
 
                 return flask.Response('unknown action %s' % action), 400
 
@@ -141,6 +148,7 @@ class DohApp:
         return share
 
     def _render_dir(self, dpath, path):
+        rename_fname = flask.request.args.get('rename')
         lsdir = []
         try:
             for fname in os.listdir(dpath):
@@ -150,23 +158,27 @@ class DohApp:
                                      path=url.join(path, fname))
                 shared = self.shared.get(fpath)
                 mimetype = mimetypes.guess_type(fpath)
-                print('fpath=%s, shared=%s' % (fpath, shared))
+                # print('fpath=%s, shared=%s' % (fpath, shared))
                 if shared:
                     shared = flask.url_for('pub_handler', path=shared)
+
                 lsdir.append({
                     'name': fname,
                     'href': href,
                     'mime': mimetype[0] or '',
                     'size': st.st_size,
                     'shared': shared,
-                    'isdir': stat.S_ISDIR(st.st_mode)
+                    'isdir': stat.S_ISDIR(st.st_mode),
+                    'rename_url': path + '?rename=' + fname
                 })
+
+            lsdir = sorted(lsdir, key=lambda d: (not d['isdir'], d['name']))
             templvars = {
                 'path': path,
-                'lsdir': sorted(lsdir,
-                                key=lambda d: (not d['isdir'], d['name'])),
+                'lsdir': lsdir,
                 'path_prefixes': url.prefixes(path),
-                'title': path
+                'title': path,
+                'rename': rename_fname
             }
             return flask.render_template('dir.htm', **templvars)
         except OSError:
@@ -206,6 +218,25 @@ class DohApp:
             os.symlink(fpath, link)
             self.shared[fpath] = fname
             print('shared:', fpath, ' => ', fname)
+            return flask.redirect(flask.url_for('path_handler', path=path))
+        except OSError as e:
+            return self.r500(e)
+
+    def _rename(self, path, oldname, newname):
+        old = os.path.join(self.app.storage_dir, path, oldname)
+        new = os.path.join(self.app.storage_dir, path, newname)
+        print("mv %s %s" % (old, new))
+        try:
+            shutil.move(old, new)
+            return flask.redirect(flask.url_for('path_handler', path=path))
+        except IOError as e:
+            return self.r500(e)
+
+    def _delete(self, path, fname):
+        fname = os.path.join(self.app.storage_dir, path, fname)
+        print("rm %s" % fname)
+        try:
+            os.remove(fname)
             return flask.redirect(flask.url_for('path_handler', path=path))
         except OSError as e:
             return self.r500(e)

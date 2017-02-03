@@ -24,6 +24,9 @@ a {
   max-width: 30em;
   padding-right: 1em;
 }
+.dir-entry-type {
+  color: grey;
+}
 
 .entry-info { text-decoration: italic; }
 

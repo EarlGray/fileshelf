@@ -21,7 +21,18 @@
       <img src="{{ url_for('static_handler', path='file.png') }}" alt="file" width="16"/>
       {% endif %}
     </td>
-    <td class="dir-entry-name"><a href="{{ entry.href }}">{{ entry.name }}</a></td>
+    <td class="dir-entry-name">
+      {% if rename == entry.name %}
+      <form method="POST">
+        <input type="hidden" name="action" value="rename">
+        <input type="hidden" name="oldname" value="{{ entry.name }}">
+        <input type="text" name="newname" value="{{ entry.name }}" autofocus>
+        <input type="submit" value="rename">
+      </form>
+      {% else %}
+      <a href="{{ entry.href }}">{{ entry.name }}</a>
+      {% endif %}
+    </td>
     <td class="small dir-entry-type">{{ entry.mime }}</td>
     <td class="pull-right dir-entry-size">{{ entry.size }}</td>
     <td class="pull-right dir-entry-access">
@@ -36,14 +47,12 @@
       {% endif %}
     </td>
     <td class="dir-entry-action">
-      <form class="hoverable" action="" method="POST">
-        <input type="hidden" name="action" value="rename">
-        <input type="hidden" name="file" value="{{ entry.name }}">
-        <input type="submit" name="rename" value="rename">
-      </form>
+      <a href="{{ entry.rename_url }}" class="hoverable">
+        <input type="button" value="rename">
+      </a>
       <form class="hoverable" action="" method="POST">
         <input type="hidden" name="action" value="delete">
-        <input type="hidden" name="file" value="{{ entry.name }}">
+        <input type="hidden" name="filename" value="{{ entry.name }}">
         <input type="submit" name="delete" value="trash">
       </form>
     </td>
