@@ -1,5 +1,6 @@
 from __future__ import print_function
 
+import io
 import os
 import stat
 import shutil
@@ -86,38 +87,49 @@ class DohApp:
                 if action == 'delete':
                     fname = req.form.get('filename')
                     return self._delete(path, fname)
-                if action == 'mkdir':
-                    dname = req.form.get('name')
-                    return self._mkdir(dname)
+                if action == 'create':
+                    mime = req.form.get('mime')
+                    name = req.form.get('name')
+                    if mime == 'fs/dir':
+                        return self._mkdir(name)
+                    elif mime.startswith('text/'):
+                        return self._new_text(name)
+                    return self.r500('cannot create file with type ' + mime)
 
                 return self.r500('unknown action %s' % action)
 
             if not os.path.exists(dpath):
                 return self.r404(path)
 
-            if not os.path.isdir(dpath):
-                raw_arg = req.args.get('raw')
-                see_arg = req.args.get('see')
-                print('raw_arg=%s, see_arg=%s' % (raw_arg, see_arg))
+            if os.path.isdir(dpath):
+                return self._render_dir(dpath, path)
 
-                # TODO: for large files, redirect to nginx-served address
-                if raw_arg is not None:
-                    headers = {'Content-Type': 'application/octet-stream'}
-                    return flask.send_file(dpath), 200, headers
-                if see_arg is not None:
-                    args = {
-                        'frame_url': url.my(path),
-                        'path_prefixes': url.prefixes(self.fsdir(), path)
-                    }
-                    return flask.render_template('frame.htm', **args)
-                return flask.send_file(dpath)
-
-            return self._render_dir(dpath, path)
+            # TODO: for large files, redirect to nginx-served address
+            if 'raw' in req.args:
+                headers = {'Content-Type': 'application/octet-stream'}
+                return flask.send_file(dpath), 200, headers
+            if 'edit' in req.args:
+                text = io.open(self.fsdir(path), encoding='utf8').read()
+                args = {
+                    'js_links': [url.codemirror('codemirror.min.js')],
+                    'css_links': [url.codemirror('codemirror.min.css')],
+                    'codemirror_root': url.codemirror(),
+                    'text': text,
+                    'mimetype': mimetypes.guess_type(path)[0],
+                    'path_prefixes': url.prefixes(self.fsdir(), path)
+                }
+                return flask.render_template('edit.htm', **args)
+            if 'see' in req.args:
+                args = {
+                    'frame_url': url.my(path),
+                    'path_prefixes': url.prefixes(self.fsdir(), path)
+                }
+                return flask.render_template('frame.htm', **args)
+            return flask.send_file(dpath)
 
         @app.route(url.join(url._res, '<path:path>'))
         def static_handler(path):
-            fname = secure_filename(path)
-            fname = os.path.join(app.static_dir, fname)
+            fname = os.path.join(app.static_dir, path)
             if not os.path.exists(fname):
                 return self.r404(path)
 
@@ -167,8 +179,11 @@ class DohApp:
         entry.enctype = enctype
 
         entry.see_url = None
-        if mimetype in ['application/pdf']:
-            entry.see_url = url.my(urlpath, fname) + '?see'
+        if mimetype:
+            if mimetype in ['application/pdf']:
+                entry.see_url = url.my(urlpath, fname) + '?see'
+            elif mimetype.startswith('text/'):
+                entry.see_url = url.my(urlpath, fname) + '?edit'
 
         return entry
 
@@ -185,7 +200,17 @@ class DohApp:
         }
         mimetype, _ = mimetypes.guess_type(path)
         if mimetype is None:
-            args['maybe_new_directory'] = path
+            args['maybe_new'] = {
+                'path': path,
+                'mime': 'fs/dir',
+                'desc': 'directory'
+            }
+        elif type(mimetype) == str and mimetype.startswith('text/'):
+            args['maybe_new'] = {
+                'path': path,
+                'mime': mimetype,
+                'desc': 'text file'
+            }
         return flask.render_template('404.htm', **args), 404
 
     def r500(self, e=None):
@@ -289,15 +314,30 @@ class DohApp:
         fname = os.path.join(self.app.storage_dir, path, fname)
         print("rm %s" % fname)
         try:
-            os.remove(fname)
+            if os.path.isdir(fname):
+                os.rmdir(fname)
+            else:
+                os.remove(fname)
             return flask.redirect(flask.url_for('path_handler', path=path))
         except OSError as e:
             return self.r500(e)
 
     def _mkdir(self, dirname):
-        print('DEBUG: mkdir ' + dirname)
+        # TODO: mkdir -p
         try:
             os.mkdir(self.fsdir(dirname))
             return flask.redirect(url.my(dirname))
         except OSError as e:
+            return self.r500(e)
+
+    def _new_text(self, filename):
+        fpath = self.fsdir(filename)
+        print('DEBUG: _new_text(%s)' % fpath)
+        try:
+            with open(fpath, 'w') as f:
+                f.write('')
+            return flask.redirect(url.my(filename, see=True))
+        except OSError as e:
+            return self.r500(e)
+        except IOError as e:
             return self.r500(e)

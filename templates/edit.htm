@@ -1,0 +1,229 @@
+{% extends "tmpl.htm" %}
+{% block body %}
+<style>
+#text-editor {
+  font-family: monospace;
+  font-size: 11pt;
+  height: 85%;
+}
+#editor-settings {
+  padding: 0.5em 0;
+}
+#editor-settings select {
+  margin-right: 3em;
+}
+#editor-commands {
+  padding: 1em;
+}
+#settings-container {
+  margin: 1em;
+}
+</style>
+<details id="settings-container">
+  <summary>Editor Settings</summary>
+  <div id="editor-settings">
+    <label for="editor-fontsize">Font size:</label>
+    <select id="editor-fontsize">
+      <option value="8pt">8</option>
+      <option value="10pt">10</option>
+      <option value="11pt" selected>11</option>
+      <option value="12pt">12</option>
+      <option value="14pt">14</option>
+      <option value="16pt">16</option>
+      <option value="20pt">20</option>
+    </select>
+
+    <label for="editor-keymap">Keymap:</label>
+    <select id="editor-keymap">
+      <option value="vim" selected>vim</option>
+      <option value="emacs">emacs</option>
+      <option value="sublime">sublime</option>
+    </select>
+
+    <label for="editor-mode">Mode:</label>
+    <select id="editor-mode">
+      <option value="" selected>Select mode...</option>
+      <!--option value="apl">APL</option-->
+      <option value="clike" data-fext="c,cc,cpp,java">C-like</option>
+      <option value="css" data-fext="css" data-mime="text/css">CSS</option>
+      <option value="diff" data-fext="diff,patch">Diff</option>
+      <option value="erlang" data-fext="erl">Erlang</option>
+      <option value="forth" data-fext="f">Forth</option>
+      <option value="gas" data-fext="S,s,asm">GNU assembly</option>
+      <option value="go" data-fext="go">Go</option>
+      <option value="groovy" data-fext="groovy">Groobvy</option>
+      <option value="haskell-literate" data-fext="lhs">Haskell (literate)</option>
+      <option value="haskell" data-fext="hs">Haskell</option>
+      <!--option value="haxe">Haxe</option-->
+      <option value="javascript" data-mime="application/javascript" data-fext="js">Javascript</option>
+      <option value="jinja2">Jinja2</option>
+      <!--option value="julia">Julia</option-->
+      <option value="lua" data-fext="lua">Lua</option>
+      <option value="markdown" data-fext="md,markdown">Markdown</option>
+      <option value="mbox" data-fext="mbox">mbox</option>
+      <option value="mllike" data-fext="ml">ml-like (Ocaml/SML)</option>
+      <option value="perl" data-fext="pl,pm">Perl</option>
+      <option value="php" data-fext="php">PHP</option>
+      <option value="powershell" data-fext="ps1">Powershell</option>
+      <!--option value="protobuf">Protobuf</option-->
+      <!--option value="puppet">Puppet</option-->
+      <option value="python" data-mime="text/x-python">Python</option>
+      <option value="r" data-fext="r">R</option>
+      <option value="ruby" data-fext="rb">Ruby</option>
+      <option value="rust" data-fext="rs">Rust</option>
+      <option value="scheme" data-fext="scm">Scheme</option>
+      <option value="shell" data-mime="text/x-sh" data-fext="sh">shell</option>
+      <option value="sql" data-fext="sql">SQL</option>
+      <option value="swift" data-fext="swift">Swift</option>
+      <option value="troff" data-fext="tr">Troff</option>
+      <option value="verilog" data-fext="v">Verilog</option>
+      <option value="vue" data-fext="vue">Vue.js</option>
+      <option value="xml" data-mime="application/xml" data-fext="xml">XML</option>
+      <option value="yaml" data-fext="yaml">YAML</option>
+    </select>
+
+    <!-- TODO -->
+    <!--label for="select">Tabsize</label>
+    <select id="editor-tabsize">
+      <option value="2">2</option>
+      <option value="4" selected>4</option>
+      <option value="8">8</option>
+    </select-->
+
+    <label>Show line numbers:</label><input id="editor-line-numbers" type="checkbox">
+    </div>
+
+
+  </div>
+</details>
+<div id="editor-commands">
+  <!--button>Save</button-->
+</div>
+<textarea id="text-editor" cols="90"
+    spellcheck="false" autofocus>
+{{ text }}
+</textarea>
+<script>
+var mimetype = "{{ mimetype }}";
+
+var the_editor;
+var textarea = document.querySelector('#text-editor');
+
+var loadedCache = {};
+var loadCodemirror = function (path, loaded) {
+  var src = "{{ codemirror_root }}/" + path;
+  if (loadedCache[src])
+    return loaded();
+
+  var js_el = document.createElement('script');
+  console.log('Loading: <script src="' + src + '">< /script>');
+  js_el.onload = function () {
+    loadedCache[src] = true;
+    loaded();
+  };
+  js_el.src = src;
+  document.body.appendChild(js_el);
+};
+
+window.onload = function () {
+  var $ = document.querySelector;
+  var selectFontSize = document.querySelector('select#editor-fontsize');
+  var selectMode = document.querySelector('select#editor-mode');
+  var selectKeymap = document.querySelector('select#editor-keymap');
+
+  var detectMode = function () {
+    var the_ext = window.location.pathname.split('.');
+    if (the_ext.length < 2)
+      return;
+    the_ext = (function (a) { return a[a.length-1]; })(the_ext);
+    console.log('detecting mode for extension '  + the_ext);
+
+    for (var i = 0; i < selectMode.children.length; ++i) {
+      var opt = selectMode.children[i];
+      var mime = opt.getAttribute('data-mime');
+      if (mime && mime === mimetype)
+        return i;
+
+      var file_exts = opt.getAttribute('data-fext');
+      if (!file_exts) continue;
+      file_exts = file_exts.split(',');
+      if (file_exts.indexOf(the_ext) >= 0)
+        return i;
+    }
+    return null;
+  };
+
+  the_editor = CodeMirror.fromTextArea(textarea, {
+      lineNumbers: true
+  });
+  the_editor.focus();
+
+  /* mode */
+  selectMode.onchange = function (event) {
+    var mode_changed = function () {
+      the_editor.setOption('mode', mode);
+      console.log('editor mode changed to ' + (mode ? mode : 'plain'));
+    };
+    var mode_opt = selectMode.selectedOptions[0];
+    var mode = mode_opt.value;
+    if (!mode)
+      return mode_changed();
+
+    loadCodemirror('mode/'+mode+'/'+mode+'.min.js', mode_changed);
+  };
+  
+  var mode_index = detectMode();
+  if (mode_index) {
+    var mode_opt = selectMode.options[mode_index];
+    console.log('detected mode: '+mode_opt.value+' ('+mode_index+')');
+    mode_opt.selected = true;
+    selectMode.onchange();
+  }
+
+  /* keymap */
+  selectKeymap.onchange = function () {
+    var keymap_opt = selectKeymap.selectedOptions[0];
+    var keymap = keymap_opt.value;
+
+    loadCodemirror('keymap/' + keymap + '.min.js', function () {
+      the_editor.setOption('keyMap', keymap);
+      console.log('editor keymap changed to ' + keymap);
+    });
+  };
+
+  var keymap = selectKeymap.selectedOptions[0].value;
+  console.log('selected keymap: ' + keymap);
+  selectKeymap.onchange();
+
+  /* font size */
+  selectFontSize.onchange = function (event) {
+    var fontsize = selectFontSize.selectedOptions[0].value;
+    console.log('font size changed to ' + fontsize);
+
+    var cmdiv = document.querySelector('.CodeMirror');
+    cmdiv.style.fontSize = fontsize;
+  };
+  selectFontSize.onchange();
+
+  /* show line numbers */
+  var checkLineNumbers = document.querySelector('input#editor-line-numbers');
+  checkLineNumbers.onchange = function () {
+    the_editor.setOption('lineNumbers', checkLineNumbers.checked);
+  };
+  checkLineNumbers.checked = true;
+  checkLineNumbers.onchange();
+
+  /* resize */
+  window.onresize = function () {
+    console.log('resized: height=' + window.innerHeight +
+                ', width=' + window.innerWidth);
+    var cmdiv = document.querySelector('.CodeMirror');
+    the_editor.setSize(null, window.innerHeight - cmdiv.offsetTop - 30);
+  };
+  window.onresize();
+
+  /* TODO: "save" button */
+  /* TODO: saving settings into cookies */
+};
+</script>
+{% endblock %}

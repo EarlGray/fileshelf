@@ -11,9 +11,20 @@ def join(*args):
     return '/'.join([arg.rstrip('/') for arg in args if len(arg)])
 
 
-def my(*args):
+def my(*args, **kwargs):
     path = join(*args) if args else None
-    return flask.url_for('path_handler', path=path)
+    u = flask.url_for('path_handler', path=path)
+    if kwargs.get('see'):
+        u += '?see'
+    elif kwargs.get('raw'):
+        u += '?raw'
+    return u
+
+
+def res(*args):
+    path = join(*args) if args else None
+    u = flask.url_for('static_handler', path=path)
+    return u
 
 
 def prefixes(storage_dir, path):
@@ -32,3 +43,8 @@ def prefixes(storage_dir, path):
 
         res.append((d, url))
     return res
+
+
+def codemirror(path=None):
+    cdn_root = 'https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.23.0'
+    return join(cdn_root, path) if path else cdn_root

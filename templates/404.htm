@@ -1,12 +1,14 @@
 {% extends "tmpl.htm" %}
 {% block body %}
 <h1>Not found</h1>
-{% if maybe_new_directory -%}
-<p>Maybe, you would like to create a directory <code>{{ maybe_new_directory }}</code>:</p>
+{% if maybe_new -%}
+<p>Maybe, you would like to create a {{ maybe_new.desc }}
+  <code>{{ maybe_new.path }}</code>:</p>
 <form method="POST">
-  <input type="hidden" name="action" value="mkdir">
-  <input type="hidden" name="name" value="{{ maybe_new_directory }}">
-  <input type="submit" value="create this directory">
+  <input type="hidden" name="action" value="create">
+  <input type="hidden" name="mime" value="{{ maybe_new.mime }}">
+  <input type="hidden" name="name" value="{{ maybe_new.path }}">
+  <input type="submit" value="create this {{ maybe_new.desc }}" autofocus>
 </form>
 {% else -%}
 <p>
