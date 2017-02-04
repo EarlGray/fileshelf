@@ -86,8 +86,11 @@ class DohApp:
                 if action == 'delete':
                     fname = req.form.get('filename')
                     return self._delete(path, fname)
+                if action == 'mkdir':
+                    dname = req.form.get('name')
+                    return self._mkdir(dname)
 
-                return flask.Response('unknown action %s' % action), 400
+                return self.r500('unknown action %s' % action)
 
             if not os.path.exists(dpath):
                 return self.r404(path)
@@ -136,8 +139,12 @@ class DohApp:
     def run(self):
         self.app.run(host=self.conf['host'], port=self.conf['port'])
 
-    def fsdir(self):
-        return self.app.storage_dir
+    def fsdir(self, *args):
+        root = self.app.storage_dir
+        if args:
+            args = os.path.join(*args)
+            root = os.path.join(root, args)
+        return root
 
     def file_info(self, urlpath, dpath, fname):
         fpath = os.path.join(dpath, fname)
@@ -176,10 +183,16 @@ class DohApp:
             'path_prefixes': path_prefixes,
             'title': 'no ' + path if path else 'not found'
         }
+        mimetype, _ = mimetypes.guess_type(path)
+        if mimetype is None:
+            args['maybe_new_directory'] = path
         return flask.render_template('404.htm', **args), 404
 
     def r500(self, e=None):
-        args = {'title': 'server error', 'e': e}
+        args = {
+            'title': 'server error',
+            'e': e
+        }
         return flask.render_template('500.htm', **args), 500
 
     def _scan_share(self, share_dir):
@@ -232,8 +245,7 @@ class DohApp:
             return flask.redirect(redir_url)
 
         # TODO: secure_filename is too secure
-        fpath = os.path.join(self.fsdir(), path,
-                             secure_filename(f.filename))
+        fpath = self.fsdir(path, secure_filename(f.filename))
         print('Saving file as %s' % fpath)
         try:
             f.save(fpath)
@@ -279,5 +291,13 @@ class DohApp:
         try:
             os.remove(fname)
             return flask.redirect(flask.url_for('path_handler', path=path))
+        except OSError as e:
+            return self.r500(e)
+
+    def _mkdir(self, dirname):
+        print('DEBUG: mkdir ' + dirname)
+        try:
+            os.mkdir(self.fsdir(dirname))
+            return flask.redirect(url.my(dirname))
         except OSError as e:
             return self.r500(e)

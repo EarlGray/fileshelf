@@ -1,7 +1,18 @@
 {% extends "tmpl.htm" %}
 {% block body %}
 <h1>Not found</h1>
-Your page is not found<br>
+{% if maybe_new_directory -%}
+<p>Maybe, you would like to create a directory <code>{{ maybe_new_directory }}</code>:</p>
+<form method="POST">
+  <input type="hidden" name="action" value="mkdir">
+  <input type="hidden" name="name" value="{{ maybe_new_directory }}">
+  <input type="submit" value="create this directory">
+</form>
+{% else -%}
+<p>
+This file is not found<br>
 To try again is useless<br>
 It is just not here<br>
+</p>
+{% endif -%}
 {% endblock %}
