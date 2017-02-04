@@ -8,6 +8,16 @@
   <link rel="stylesheet" type="text/css" href="{{ url_for('static_handler', path='fs.css') }}" />
 </head>
 <body>
+  <h2>
+    <a href="{{ url_for('path_handler') }}">FS:</a>
+    {% for prefix, href in path_prefixes -%}
+    {% if href -%} / <a href="{{ href }}">{{ prefix }}</a>
+    {% else -%}
+    / <span class="no-such">{{ prefix }}</span>
+    {% endif -%}
+    {% endfor -%}
+  </h2>
+  <hr/>
   {% block body %}
   {% endblock %}
 </body>

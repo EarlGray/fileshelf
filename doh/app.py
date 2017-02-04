@@ -39,7 +39,7 @@ class DohApp:
         app.share_dir = conf['share_dir']
         self.shared = self._scan_share(app.share_dir)
 
-        # monkey-patch the environment to handle 'X-Forwarder-For'
+        # monkey-patch the environment to handle 'X-Forwarded-For'
         # 'X-Forwarded-Proto', etc:
         app.wsgi_app = ReverseProxied(app.wsgi_app)
 
@@ -57,8 +57,8 @@ class DohApp:
         def home_handler():
             return flask.redirect(flask.url_for('path_handler')), 302
 
-        @app.route(url.my, defaults={'path': ''}, methods=['GET', 'POST'])
-        @app.route(url.join(url.my, '<path:path>'), methods=['GET', 'POST'])
+        @app.route(url._my, defaults={'path': ''}, methods=['GET', 'POST'])
+        @app.route(url.join(url._my, '<path:path>'), methods=['GET', 'POST'])
         def path_handler(path):
             req = flask.request
             dpath = os.path.join(app.storage_dir, path)
@@ -93,12 +93,25 @@ class DohApp:
                 return self.r404(path)
 
             if not os.path.isdir(dpath):
+                raw_arg = req.args.get('raw')
+                see_arg = req.args.get('see')
+                print('raw_arg=%s, see_arg=%s' % (raw_arg, see_arg))
+
                 # TODO: for large files, redirect to nginx-served address
+                if raw_arg is not None:
+                    headers = {'Content-Type': 'application/octet-stream'}
+                    return flask.send_file(dpath), 200, headers
+                if see_arg is not None:
+                    args = {
+                        'frame_url': url.my(path),
+                        'path_prefixes': url.prefixes(self.fsdir(), path)
+                    }
+                    return flask.render_template('frame.htm', **args)
                 return flask.send_file(dpath)
 
             return self._render_dir(dpath, path)
 
-        @app.route(url.join(url.res, '<path:path>'))
+        @app.route(url.join(url._res, '<path:path>'))
         def static_handler(path):
             fname = secure_filename(path)
             fname = os.path.join(app.static_dir, fname)
@@ -108,7 +121,7 @@ class DohApp:
             # print('Serving %s' % fname)
             return flask.send_file(fname)
 
-        @app.route(url.join(url.pub, '<path:path>'))
+        @app.route(url.join(url._pub, '<path:path>'))
         def pub_handler(path):
             fname = secure_filename(path)
             fname = os.path.join(app.share_dir, fname)
@@ -123,12 +136,46 @@ class DohApp:
     def run(self):
         self.app.run(host=self.conf['host'], port=self.conf['port'])
 
+    def fsdir(self):
+        return self.app.storage_dir
+
+    def file_info(self, urlpath, dpath, fname):
+        fpath = os.path.join(dpath, fname)
+
+        def entry(): return 0
+
+        st = os.lstat(fpath)
+        entry.size = st.st_size
+        entry.isdir = stat.S_ISDIR(st.st_mode)
+
+        entry.href = url.my(urlpath, fname)
+
+        shared = self.shared.get(fpath)
+        if shared:
+            shared = flask.url_for('pub_handler', path=shared)
+        entry.shared = shared
+
+        mimetype, enctype = mimetypes.guess_type(fpath)
+        entry.mimetype = mimetype
+        entry.enctype = enctype
+
+        entry.see_url = None
+        if mimetype in ['application/pdf']:
+            entry.see_url = url.my(urlpath, fname) + '?see'
+
+        return entry
+
     def r400(self, why):
         args = {'title': 'not accepted', 'e': why}
         return flask.render_template('500.htm', **args), 400
 
     def r404(self, path=None):
-        args = {'path': path, 'title': 'no ' + path if path else 'not found'}
+        path_prefixes = url.prefixes(self.fsdir(), path)
+        args = {
+            'path': path,
+            'path_prefixes': path_prefixes,
+            'title': 'no ' + path if path else 'not found'
+        }
         return flask.render_template('404.htm', **args), 404
 
     def r500(self, e=None):
@@ -148,27 +195,19 @@ class DohApp:
         return share
 
     def _render_dir(self, dpath, path):
-        rename_fname = flask.request.args.get('rename')
         lsdir = []
         try:
             for fname in os.listdir(dpath):
-                fpath = os.path.join(dpath, fname)
-                st = os.lstat(fpath)
-                href = flask.url_for('path_handler',
-                                     path=url.join(path, fname))
-                shared = self.shared.get(fpath)
-                mimetype = mimetypes.guess_type(fpath)
-                # print('fpath=%s, shared=%s' % (fpath, shared))
-                if shared:
-                    shared = flask.url_for('pub_handler', path=shared)
+                entry = self.file_info(path, dpath, fname)
 
                 lsdir.append({
                     'name': fname,
-                    'href': href,
-                    'mime': mimetype[0] or '',
-                    'size': st.st_size,
-                    'shared': shared,
-                    'isdir': stat.S_ISDIR(st.st_mode),
+                    'href': entry.href,
+                    'mime': entry.mimetype or '',
+                    'size': entry.size,
+                    'shared': entry.shared,
+                    'isdir': entry.isdir,
+                    'see_url': entry.see_url,
                     'rename_url': path + '?rename=' + fname
                 })
 
@@ -176,9 +215,9 @@ class DohApp:
             templvars = {
                 'path': path,
                 'lsdir': lsdir,
-                'path_prefixes': url.prefixes(path),
+                'path_prefixes': url.prefixes(self.fsdir(), path),
                 'title': path,
-                'rename': rename_fname
+                'rename': flask.request.args.get('rename')
             }
             return flask.render_template('dir.htm', **templvars)
         except OSError:
@@ -191,7 +230,9 @@ class DohApp:
         f = req.files['file']
         if not f.filename:
             return flask.redirect(redir_url)
-        fpath = os.path.join(self.app.storage_dir, path,
+
+        # TODO: secure_filename is too secure
+        fpath = os.path.join(self.fsdir(), path,
                              secure_filename(f.filename))
         print('Saving file as %s' % fpath)
         try:

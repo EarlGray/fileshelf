@@ -1,0 +1,12 @@
+{% extends "tmpl.htm" %}
+{% block body %}
+<div id="frame-container" class="centered">
+  <iframe id="file-frame" name="file-preview"
+          src="{{ frame_url }}"
+          >
+    <div class="no-such">
+    Your file should appear here, but something went wrong
+    </div>
+  </iframe>
+</div>
+{% endblock %}

@@ -1,50 +1,53 @@
 {% extends "tmpl.htm" %}
 {% block body %}
-<h2>
-  <a href="{{ url_for('path_handler') }}">FS:</a> {% for prefix, href in path_prefixes %} / <a href="{{ href }}">{{ prefix }}</a>{% endfor %}
-</h2>
-<hr/>
-<table>
-  <tr>
+<table id="dir-entries">
+  <tr id="dir-entries-header">
     <th></th>
-    <th>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; filename &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</th>
-    <th>&nbsp;&nbsp;&nbsp;&nbsp; type &nbsp;&nbsp;&nbsp;</th>
-    <th>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; size &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</th>
-    <th>&nbsp;&nbsp;&nbsp;&nbsp; access &nbsp;&nbsp;&nbsp;&nbsp;</th>
-    <th>action</th>
+    <th>filename &nbsp;</th>
+    <th>type &nbsp;</th>
+    <th>size &nbsp;</th>
+    <th>access &nbsp;</th>
+    <th>action &nbsp;</th>
   </tr>
-  {% for entry in lsdir %}
+  {% for entry in lsdir -%}
   <tr class="dir-entry-row">
-    <td class="dir-entry-icon">{% if entry.isdir %}
+    <td class="dir-entry-icon">
+      {% if entry.isdir -%}
       <img src="{{ url_for('static_handler', path='dir.png') }}" alt="dir" width="16"/>
-      {% else %}
+      {% else -%}
       <img src="{{ url_for('static_handler', path='file.png') }}" alt="file" width="16"/>
-      {% endif %}
+      {% endif -%}
     </td>
     <td class="dir-entry-name">
-      {% if rename == entry.name %}
+      {% if rename == entry.name -%}
       <form method="POST">
         <input type="hidden" name="action" value="rename">
         <input type="hidden" name="oldname" value="{{ entry.name }}">
         <input type="text" name="newname" value="{{ entry.name }}" autofocus>
         <input type="submit" value="rename">
       </form>
-      {% else %}
+      {% else -%}
       <a href="{{ entry.href }}">{{ entry.name }}</a>
-      {% endif %}
+      {% endif -%}
     </td>
-    <td class="small dir-entry-type">{{ entry.mime }}</td>
+    <td class="small dir-entry-type">
+      {% if entry.see_url -%}
+      <a class="see-link entry-em" href="{{ entry.see_url }}">{{ entry.mime }}</a>
+      {% else -%}
+      {{ entry.mime }}
+      {% endif -%}
+    </td>
     <td class="pull-right dir-entry-size">{{ entry.size }}</td>
     <td class="pull-right dir-entry-access">
-      {% if entry.shared %}
-      <a class="entry-info" href="{{ entry.shared }}">public</a>
-      {% elif not entry.isdir %}
+      {% if entry.shared -%}
+      <a class="entry-em" href="{{ entry.shared }}">public</a>
+      {% elif not entry.isdir -%}
       <form class="hoverable" action="" method="POST">
         <input type="hidden" name="action" value="share">
         <input type="hidden" name="file" value="{{ entry.name }}">
         <input type="submit" name="share" value="share">
       </form>
-      {% endif %}
+      {% endif -%}
     </td>
     <td class="dir-entry-action">
       <a href="{{ entry.rename_url }}" class="hoverable">
@@ -56,7 +59,8 @@
         <input type="submit" name="delete" value="delete">
       </form>
     </td>
-  </tr> {% endfor %}
+  </tr>
+  {% endfor -%}
 </table>
 <hr/>
 <form action="" method="POST" enctype="multipart/form-data">
@@ -65,4 +69,3 @@
   <input type="submit" name="upload" value="Upload"/>
 </form>
 {% endblock %}
-<!-- vim : set sts=2 sw=2 -->
