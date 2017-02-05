@@ -54,10 +54,6 @@ class DohApp:
         def internal_error(e):
             return self.r500(e)
 
-        @app.route('/')
-        def home_handler():
-            return flask.redirect(url.my()), 302
-
         @app.route(url._my, defaults={'path': ''}, methods=['GET', 'POST'])
         @app.route(url.join(url._my, '<path:path>'), methods=['GET', 'POST'])
         def path_handler(path):
@@ -202,6 +198,8 @@ class DohApp:
         return flask.render_template('500.htm', **args), 400
 
     def r404(self, path=None):
+        if path is None:
+            return flask.redirect(url.my())
         path_prefixes = url.prefixes(self.fsdir(), path)
         args = {
             'path': path,
