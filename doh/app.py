@@ -123,11 +123,15 @@ class DohApp:
                 }
                 return flask.render_template('edit.htm', **args)
             if 'see' in req.args:
+                mimetype, _ = mimetypes.guess_type(path)
                 args = {
                     'frame_url': url.my(path),
                     'path_prefixes': url.prefixes(self.fsdir(), path)
                 }
-                return flask.render_template('frame.htm', **args)
+                tmpl = 'frame.htm'
+                if mimetype.startswith('video/'):
+                    tmpl = 'media.htm'
+                return flask.render_template(tmpl, **args)
             return flask.send_file(dpath)
 
         @app.route(url.join(url._res, '<path:path>'))
@@ -184,6 +188,9 @@ class DohApp:
         entry.see_url = None
         if mimetype:
             if mimetype in ['application/pdf']:
+                entry.see_url = url.my(urlpath, fname) + '?see'
+            elif mimetype.startswith('video/'):
+                # TODO: outsource streaming to nginx
                 entry.see_url = url.my(urlpath, fname) + '?see'
             elif mimetype.startswith('text/'):
                 entry.see_url = url.my(urlpath, fname) + '?edit'
