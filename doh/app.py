@@ -56,7 +56,7 @@ class DohApp:
 
         @app.route('/')
         def home_handler():
-            return flask.redirect(flask.url_for('path_handler')), 302
+            return flask.redirect(url.my()), 302
 
         @app.route(url._my, defaults={'path': ''}, methods=['GET', 'POST'])
         @app.route(url.join(url._my, '<path:path>'), methods=['GET', 'POST'])
@@ -71,11 +71,14 @@ class DohApp:
             print('#### %s %s %s => <%s>' % (req.method, path, user, dpath))
 
             if req.method == 'POST':
+                if 'update' in req.args:
+                    return self._update(path, req.data)
+
                 print(req.form)
                 action = req.form['action']
                 if action == 'upload':
                     if 'file' not in req.files:
-                        return self.r500('no file in POST')
+                        return self.r400('no file in POST')
 
                     return self._upload(req, path)
                 if action == 'share':
@@ -94,9 +97,9 @@ class DohApp:
                         return self._mkdir(name)
                     elif mime.startswith('text/'):
                         return self._new_text(name)
-                    return self.r500('cannot create file with type ' + mime)
+                    return self.r400('cannot create file with type ' + mime)
 
-                return self.r500('unknown action %s' % action)
+                return self.r400('unknown action %s' % action)
 
             if not os.path.exists(dpath):
                 return self.r404(path)
@@ -336,8 +339,21 @@ class DohApp:
         try:
             with open(fpath, 'w') as f:
                 f.write('')
-            return flask.redirect(url.my(filename, see=True))
+            return flask.redirect(url.my(filename) + '?edit')
         except OSError as e:
             return self.r500(e)
         except IOError as e:
             return self.r500(e)
+
+    def _update(self, path, data):
+        print('update request for %s:' % path)
+        print(data)
+        fpath = self.fsdir(path)
+        try:
+            with io.open(fpath, 'w', encoding='utf8') as f:
+                f.write(data.decode('utf8'))
+            return flask.Response("saved"), 200
+        except OSError as e:
+            return flask.Response(str(e)), 400
+        except IOError as e:
+            return flask.Response(str(e)), 400

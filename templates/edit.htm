@@ -8,6 +8,7 @@
 }
 #editor-settings {
   padding: 0.5em 0;
+  /*float: right;*/
 }
 #editor-settings select {
   margin-right: 3em;
@@ -17,6 +18,10 @@
 }
 #settings-container {
   margin: 1em;
+  float: right;
+}
+.CodeMirror {
+  border: 1px solid #888;
 }
 </style>
 <details id="settings-container">
@@ -32,6 +37,7 @@
       <option value="16pt">16</option>
       <option value="20pt">20</option>
     </select>
+    <p>
 
     <label for="editor-keymap">Keymap:</label>
     <select id="editor-keymap">
@@ -39,6 +45,7 @@
       <option value="emacs">emacs</option>
       <option value="sublime">sublime</option>
     </select>
+    <p>
 
     <label for="editor-mode">Mode:</label>
     <select id="editor-mode">
@@ -81,6 +88,7 @@
       <option value="xml" data-mime="application/xml" data-fext="xml">XML</option>
       <option value="yaml" data-fext="yaml">YAML</option>
     </select>
+    <p>
 
     <!-- TODO -->
     <!--label for="select">Tabsize</label>
@@ -92,12 +100,10 @@
 
     <label>Show line numbers:</label><input id="editor-line-numbers" type="checkbox">
     </div>
-
-
   </div>
 </details>
 <div id="editor-commands">
-  <!--button>Save</button-->
+  <button id="save-btn">Save</button>
 </div>
 <textarea id="text-editor" cols="90"
     spellcheck="false" autofocus>
@@ -116,7 +122,6 @@ var loadCodemirror = function (path, loaded) {
     return loaded();
 
   var js_el = document.createElement('script');
-  console.log('Loading: <script src="' + src + '">< /script>');
   js_el.onload = function () {
     loadedCache[src] = true;
     loaded();
@@ -215,14 +220,38 @@ window.onload = function () {
 
   /* resize */
   window.onresize = function () {
-    console.log('resized: height=' + window.innerHeight +
-                ', width=' + window.innerWidth);
     var cmdiv = document.querySelector('.CodeMirror');
     the_editor.setSize(null, window.innerHeight - cmdiv.offsetTop - 30);
   };
   window.onresize();
 
-  /* TODO: "save" button */
+  /* save button */
+  var saveButton = document.querySelector('#save-btn');
+  saveButton.onclick = function () {
+    var text = the_editor.getValue();
+    var url = location.pathname + '?update';
+
+    var xhr = new XMLHttpRequest();
+    xhr.onreadystatechange = function () {
+      if (xhr.readyState === XMLHttpRequest.DONE) {
+        if (xhr.status == 200) {
+          the_editor.markClean();
+          saveButton.disabled = true;
+          console.log('UPDATE: xhr.responseText: ' + xhr.responseText);
+        } else {
+          console.log('UPDATE: xhr.status = ' + xhr.status);
+        }
+      }
+    };
+    xhr.open('POST', url);
+    xhr.setRequestHeader('Content-Type', 'text/plain');
+    xhr.send(text);
+  };
+  saveButton.disabled = true;
+  the_editor.on('change', function () {
+    saveButton.disabled = the_editor.isClean();
+  });
+
   /* TODO: saving settings into cookies */
 };
 </script>
