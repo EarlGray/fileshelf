@@ -27,26 +27,16 @@
 <details id="settings-container">
   <summary>Editor Settings</summary>
   <div id="editor-settings">
-    <label for="editor-fontsize">Font size:</label>
-    <select id="editor-fontsize">
-      <option value="8pt">8</option>
-      <option value="10pt">10</option>
-      <option value="11pt" selected>11</option>
-      <option value="12pt">12</option>
-      <option value="14pt">14</option>
-      <option value="16pt">16</option>
-      <option value="20pt">20</option>
-    </select>
+    <hr>
     <p>
-
     <label for="editor-keymap">Keymap:</label>
     <select id="editor-keymap">
       <option value="vim" selected>vim</option>
       <option value="emacs">emacs</option>
       <option value="sublime">sublime</option>
     </select>
-    <p>
 
+    <p>
     <label for="editor-mode">Mode:</label>
     <select id="editor-mode">
       <option value="" selected>Select mode...</option>
@@ -62,6 +52,7 @@
       <option value="haskell-literate" data-fext="lhs">Haskell (literate)</option>
       <option value="haskell" data-fext="hs">Haskell</option>
       <!--option value="haxe">Haxe</option-->
+      <!--option value="htmlmixed" data-mime="text/html" data-fext="htm,html">HTML</option-->
       <option value="javascript" data-mime="application/javascript" data-fext="js">Javascript</option>
       <option value="jinja2">Jinja2</option>
       <!--option value="julia">Julia</option-->
@@ -81,16 +72,18 @@
       <option value="scheme" data-fext="scm">Scheme</option>
       <option value="shell" data-mime="text/x-sh" data-fext="sh">shell</option>
       <option value="sql" data-fext="sql">SQL</option>
+      <option value="stex" data-fext="tex"
+          data-src="https://codemirror.net/mode/stex/stex.js">Tex, Latex</option>
       <option value="swift" data-fext="swift">Swift</option>
       <option value="troff" data-fext="tr">Troff</option>
       <option value="verilog" data-fext="v">Verilog</option>
       <option value="vue" data-fext="vue">Vue.js</option>
-      <option value="xml" data-mime="application/xml" data-fext="xml">XML</option>
+      <option value="xml" data-mime="application/xml" data-fext="xml,htm,html">XML, HTML</option>
       <option value="yaml" data-fext="yaml">YAML</option>
     </select>
-    <p>
 
     <!-- TODO -->
+    <p>
     <!--label for="select">Tabsize</label>
     <select id="editor-tabsize">
       <option value="2">2</option>
@@ -98,7 +91,31 @@
       <option value="8">8</option>
     </select-->
 
-    <label>Show line numbers:</label><input id="editor-line-numbers" type="checkbox">
+    <!-- TODO: font -->
+
+    <p>
+    <label>Show line numbers:&nbsp;</label><input id="editor-line-numbers" type="checkbox">
+
+    <p>
+    <label>Line wrap:&nbsp;</label><input id="editor-wrap-lines" type="checkbox">
+
+    <hr>
+    <p>
+    <label for="editor-font">Font family:</label>
+    <select id="editor-font">
+      <option value="monospace" selected>monospace</option>
+      <option value="sans">sans</option>
+      <option value="serif">serif</option>
+      <option value="PT Mono">PT Mono</option>
+      <option value="Menlo">Menlo</option>
+      <option value="Courier New">Courier New</option>
+      <option value="Liberation Mono">Liberation Mono</option>
+    </select>
+
+    <p>
+    <label for="editor-font-size">Font size:</label>
+    <input id="editor-font-size" type="number" min="7" max="36" value="10">
+
     </div>
   </div>
 </details>
@@ -116,8 +133,10 @@ var the_editor;
 var textarea = document.querySelector('#text-editor');
 
 var loadedCache = {};
-var loadCodemirror = function (path, loaded) {
-  var src = "{{ codemirror_root }}/" + path;
+var loadCodemirror = function (path, loaded, src) {
+  if (!src)
+    src = "{{ codemirror_root }}/" + path;
+
   if (loadedCache[src])
     return loaded();
 
@@ -132,9 +151,7 @@ var loadCodemirror = function (path, loaded) {
 
 window.onload = function () {
   var $ = document.querySelector;
-  var selectFontSize = document.querySelector('select#editor-fontsize');
   var selectMode = document.querySelector('select#editor-mode');
-  var selectKeymap = document.querySelector('select#editor-keymap');
 
   var detectMode = function () {
     var the_ext = window.location.pathname.split('.');
@@ -173,8 +190,10 @@ window.onload = function () {
     var mode = mode_opt.value;
     if (!mode)
       return mode_changed();
+    var mode_src = mode_opt.getAttribute('data-src');
+    console.log('mode_src = ' + mode_src);
 
-    loadCodemirror('mode/'+mode+'/'+mode+'.min.js', mode_changed);
+    loadCodemirror('mode/'+mode+'/'+mode+'.min.js', mode_changed, mode_src);
   };
   
   var mode_index = detectMode();
@@ -186,6 +205,7 @@ window.onload = function () {
   }
 
   /* keymap */
+  var selectKeymap = document.querySelector('select#editor-keymap');
   selectKeymap.onchange = function () {
     var keymap_opt = selectKeymap.selectedOptions[0];
     var keymap = keymap_opt.value;
@@ -200,9 +220,20 @@ window.onload = function () {
   console.log('selected keymap: ' + keymap);
   selectKeymap.onchange();
 
+  /* font */
+  selectFontFamily = document.querySelector('select#editor-font');
+  selectFontFamily.onchange = function () {
+    var opt = selectFontFamily.selectedOptions[0];
+    var val = opt.value;
+
+    var cm = document.querySelector('.CodeMirror');
+    cm.style.fontFamily = val;
+  };
+
   /* font size */
+  var selectFontSize = document.querySelector('input#editor-font-size');
   selectFontSize.onchange = function (event) {
-    var fontsize = selectFontSize.selectedOptions[0].value;
+    var fontsize = this.value + 'pt';
     console.log('font size changed to ' + fontsize);
 
     var cmdiv = document.querySelector('.CodeMirror');
@@ -217,6 +248,14 @@ window.onload = function () {
   };
   checkLineNumbers.checked = true;
   checkLineNumbers.onchange();
+
+  /* line wrap */
+  var checkLineWrap = document.querySelector('input#editor-wrap-lines');
+  checkLineWrap.onchange = function () {
+    the_editor.setOption('lineWrapping', checkLineWrap.checked);
+  };
+  checkLineWrap.checked = false;
+  checkLineWrap.onchange();
 
   /* resize */
   window.onresize = function () {
