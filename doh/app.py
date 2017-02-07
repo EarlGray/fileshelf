@@ -1,7 +1,6 @@
 from __future__ import print_function
 
 import os
-import mimetypes
 from base64 import decodestring as b64decode
 
 import flask
@@ -9,6 +8,7 @@ from flask import Flask
 from werkzeug.utils import secure_filename
 
 import doh.url as url
+import doh.content as content
 from doh.rproxy import ReverseProxied
 from doh.storage.local import LocalStorage
 
@@ -133,13 +133,13 @@ class DohApp:
                     'css_links': [url.codemirror('codemirror.min.css')],
                     'codemirror_root': url.codemirror(),
                     'text': text,
-                    'mimetype': mimetypes.guess_type(path)[0],
+                    'mimetype': content.guess_mime(path),
                     'path_prefixes': self._gen_prefixes(path),
                     'read_only': not entry.can_write
                 }
                 return flask.render_template('edit.htm', **args)
             if 'see' in req.args:
-                mimetype, _ = mimetypes.guess_type(path)
+                mimetype = content.guess_mime(path)
                 args = {
                     'frame_url': url.my(path),
                     'path_prefixes': self._gen_prefixes(path)
@@ -217,14 +217,14 @@ class DohApp:
             'path_prefixes': self._gen_prefixes(path),
             'title': 'no ' + path if path else 'not found'
         }
-        mimetype, _ = mimetypes.guess_type(path)
+        mimetype = content.guess_mime(path)
         if mimetype is None:
             args['maybe_new'] = {
                 'path': path,
                 'mime': 'fs/dir',
                 'desc': 'directory'
             }
-        elif type(mimetype) == str and mimetype.startswith('text/'):
+        elif mimetype.startswith('text/'):
             args['maybe_new'] = {
                 'path': path,
                 'mime': mimetype,
@@ -239,18 +239,6 @@ class DohApp:
         }
         return flask.render_template('500.htm', **args), 500
 
-    # def _scan_share(self, share_dir):
-    #     share = {}
-    #     for link in os.listdir(share_dir):
-    #         lpath = os.path.join(share_dir, link)
-    #         if not os.path.islink(lpath):
-    #             continue
-
-    #         source = os.readlink(lpath)
-    #         print('share: %s => %s' % (link, source))
-    #         share[source] = link
-    #     return share
-
     def _render_dir(self, path):
         lsdir = []
         try:
@@ -259,6 +247,7 @@ class DohApp:
 
                 lsfile = {
                     'name': fname,
+                    'mime': content.guess_mime(fname),
                     'href': entry.href,
                     'size': entry.size,
                     'isdir': entry.is_dir,
@@ -310,26 +299,6 @@ class DohApp:
         except OSError as e:
             return self.r500(e)
 
-    # def _share(self, path):
-    #     req = flask.request
-    #     try:
-    #         fname = req.form.get('file')
-    #         if not fname:
-    #             return self.r400('no `file` in POST')
-
-    #         fname = secure_filename(fname)
-    #         fpath = os.path.join(dpath, fname)
-    #         link = os.path.join(self.app.share_dir, fname)
-    #         # TODO: check if already shared
-    #         # TODO: check for existing links
-
-    #         os.symlink(fpath, link)
-    #         self.shared[fpath] = fname
-    #         print('shared:', fpath, ' => ', fname)
-    #         return flask.redirect(flask.url_for('path_handler', path=path))
-    #     except OSError as e:
-    #         return self.r500(e)
-
     def _rename(self, path, oldname, newname):
         print("mv %s/%s %s/%s" % (path, oldname, path, newname))
         if os.path.dirname(oldname):
@@ -362,8 +331,34 @@ class DohApp:
             return self.r500(e)
         return flask.redirect(url.my(dirname))
 
-    def _update(self, path, data):
-        print('update request for %s:' % path)
-        print(data)
-        print('------------------------------')
-        return self.storage.write_text(path, data)
+    # def _scan_share(self, share_dir):
+    #     share = {}
+    #     for link in os.listdir(share_dir):
+    #         lpath = os.path.join(share_dir, link)
+    #         if not os.path.islink(lpath):
+    #             continue
+
+    #         source = os.readlink(lpath)
+    #         print('share: %s => %s' % (link, source))
+    #         share[source] = link
+    #     return share
+
+    # def _share(self, path):
+    #     req = flask.request
+    #     try:
+    #         fname = req.form.get('file')
+    #         if not fname:
+    #             return self.r400('no `file` in POST')
+
+    #         fname = secure_filename(fname)
+    #         fpath = os.path.join(dpath, fname)
+    #         link = os.path.join(self.app.share_dir, fname)
+    #         # TODO: check if already shared
+    #         # TODO: check for existing links
+
+    #         os.symlink(fpath, link)
+    #         self.shared[fpath] = fname
+    #         print('shared:', fpath, ' => ', fname)
+    #         return flask.redirect(flask.url_for('path_handler', path=path))
+    #     except OSError as e:
+    #         return self.r500(e)

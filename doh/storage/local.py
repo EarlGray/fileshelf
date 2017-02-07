@@ -5,6 +5,8 @@ import errno
 import shutil
 import mimetypes
 
+import doh.content as content
+
 
 class LocalStorage:
     def __init__(self, storage_dir):
@@ -61,18 +63,16 @@ class LocalStorage:
         entry.size = st.st_size
         entry.is_dir = stat.S_ISDIR(st.st_mode)
 
-        mimetype, enctype = mimetypes.guess_type(fpath)
-        entry.mimetype = mimetype
-        entry.enctype = enctype
+        entry.mimetype = content.guess_mime(path)
 
         def is_text():
-            if mimetype:
-                return mimetype.startswith('text/')
+            if entry.mimetype:
+                return entry.mimetype.startswith('text/')
             return False
 
         def is_viewable():
-            if mimetype:
-                if mimetype in ['application/pdf']:
+            if entry.mimetype:
+                if entry.mimetype in ['application/pdf']:
                     return True
             return False
 

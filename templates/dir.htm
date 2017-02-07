@@ -44,6 +44,7 @@
     <th id="deh-dl"><object type="image/svg+xml" data="{{ url_for('static_handler', path='dl.svg') }}" 
           width="16" height="16"></th>
     <th>name &nbsp;</th>
+    <th>type &nbsp;</th>
     <th>size &nbsp;</th>
     <!--th>access &nbsp;</th-->
     <th>action &nbsp;</th>
@@ -68,6 +69,9 @@
       {% else -%}
       <a href="{{ entry.href }}">{{ entry.name }}</a>
       {% endif -%}
+    </td>
+    <td class="dir-entry-type">
+        {{ entry.mime }}
     </td>
     <td class="pull-right dir-entry-size">{{ entry.size }}</td>
     <!--td class="pull-right dir-entry-access">
