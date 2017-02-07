@@ -51,9 +51,6 @@ class LocalStorage:
         except OSError as e:
             return e
 
-    def update_file(self, data):
-        pass
-
     def file_info(self, path):
         fpath = os.path.join(self.storage_dir, path)
 
