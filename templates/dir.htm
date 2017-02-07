@@ -1,22 +1,59 @@
 {% extends "tmpl.htm" %}
+{% block style %}
+<style>
+#dir-entries-header {
+  border-bottom: 1px solid #aaa;
+}
+#dir-entries-header th {
+  text-align: left;
+  padding: 0.3em 0.5em;
+}
+#dir-entries-header th#deh-dl {
+  padding: 0;
+}
+
+.dir-entry-row {
+  margin-top: 0.2em;
+  margin-bottom: 0.2em;
+  padding: 0.3em 0;
+}
+.dir-entry-row:hover {
+  background-color: #f8f8f8;
+}
+.dir-entry-row:hover .hoverable {
+  display: inline-block;
+}
+
+.dir-entry-size {
+  padding-left: 1em;
+}
+.dir-entry-name {
+  word-wrap: break-word;
+  min-width: 12em;
+  max-width: 30em;
+  padding-right: 1em;
+}
+.entry-em {
+  font-weight: bold;
+}
+</style>
+{% endblock %}
 {% block body %}
 <table id="dir-entries">
   <tr id="dir-entries-header">
-    <th></th>
+    <th id="deh-dl"><object type="image/svg+xml" data="{{ url_for('static_handler', path='dl.svg') }}" 
+          width="16" height="16"></th>
     <th>name &nbsp;</th>
-    <th>type &nbsp;</th>
     <th>size &nbsp;</th>
-    <th>access &nbsp;</th>
+    <!--th>access &nbsp;</th-->
     <th>action &nbsp;</th>
   </tr>
   {% for entry in lsdir -%}
   <tr class="dir-entry-row">
     <td class="dir-entry-icon">
-      {% if entry.isdir -%}
-      <img src="{{ url_for('static_handler', path='dir.png') }}" alt="dir" width="16"/>
-      {% else -%}
-      <img src="{{ url_for('static_handler', path='file.png') }}" alt="file" width="16"/>
-      {% endif -%}
+      <a href="{{ entry.href + '?dl' }}">
+        <img src="{{ entry.icon_src }}" alt="{{ entry.icon_alt }}" width="16"/>
+      </a>
     </td>
     <td class="dir-entry-name">
       {% if rename == entry.name -%}
@@ -26,19 +63,14 @@
         <input type="text" name="newname" value="{{ entry.name }}" autofocus>
         <input type="submit" value="rename">
       </form>
+      {% elif entry.see_url -%}
+      <a href="{{ entry.see_url }}">{{ entry.name }}</a>
       {% else -%}
       <a href="{{ entry.href }}">{{ entry.name }}</a>
       {% endif -%}
     </td>
-    <td class="small dir-entry-type">
-      {% if entry.see_url -%}
-      <a class="see-link entry-em" href="{{ entry.see_url }}">{{ entry.mime }}</a>
-      {% else -%}
-      {{ entry.mime }}
-      {% endif -%}
-    </td>
     <td class="pull-right dir-entry-size">{{ entry.size }}</td>
-    <td class="pull-right dir-entry-access">
+    <!--td class="pull-right dir-entry-access">
       {% if entry.shared -%}
       <a class="entry-em" href="{{ entry.shared }}">public</a>
       {% elif not entry.isdir -%}
@@ -48,11 +80,13 @@
         <input type="submit" name="share" value="share">
       </form>
       {% endif -%}
-    </td>
+    </td-->
     <td class="dir-entry-action">
+      {% if entry.rename_url -%}
       <a href="{{ entry.rename_url }}" class="hoverable">
         <input type="button" value="rename">
       </a>
+      {% endif %}
       <form class="hoverable" action="" method="POST">
         <input type="hidden" name="action" value="delete">
         <input type="hidden" name="filename" value="{{ entry.name }}">

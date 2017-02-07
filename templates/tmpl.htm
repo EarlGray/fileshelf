@@ -14,6 +14,8 @@
   {% for js_href in js_links -%}
   <script src="{{ js_href }}"></script>
   {% endfor -%}
+  {% block style %}
+  {% endblock -%}
 </head>
 <body>
   <h2>

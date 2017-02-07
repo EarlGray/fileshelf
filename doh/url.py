@@ -27,16 +27,17 @@ def res(*args):
     return u
 
 
-def prefixes(storage_dir, path):
+def prefixes(exists, path):
     """ generates a list of [(path_chunk, path_href or None)]
         `path_href` may be None if this path is not in the filesystem
     """
     url = my()
     res = []
+    pre = ''
     for d in path.split('/'):
-        storage_dir = os.path.join(storage_dir, d)
+        pre = os.path.join(pre, d)
 
-        if os.path.exists(storage_dir):
+        if exists(pre):
             url = join(url, d)
         else:
             url = None

@@ -1,5 +1,13 @@
 {% extends "tmpl.htm" %}
 {% block body %}
+<style>
+#file-frame {
+  position: absolute;
+  width: 95%;
+  height: 85%;
+  box-shadow: 0 0 1.5em black; 
+}
+</style>
 <div id="frame-container" class="centered">
   <iframe id="file-frame" name="file-preview"
           src="{{ frame_url }}"
