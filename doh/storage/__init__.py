@@ -1,1 +1,3 @@
-__all__ = []
+from local import LocalStorage
+
+__all__ = [LocalStorage]

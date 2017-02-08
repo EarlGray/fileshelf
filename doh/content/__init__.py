@@ -3,6 +3,13 @@ import mimetypes
 mime_by_extension = {
     'org': 'text/x-org',
     'scm': 'text/x-scheme',
+    'erl': 'text/x-erlang',
+    'rb': 'text/x-ruby',
+    'sh': 'text/x-shell',
+    'hs': 'text/x-haskell',
+    'lhs': 'text/x-haskell',
+    'md': 'text/markdown',
+    'tex': 'text/x-latex',
     'Makefile': 'text/x-makefile',
 
     # non-text:

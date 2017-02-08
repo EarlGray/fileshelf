@@ -12,26 +12,29 @@
   padding: 0;
 }
 
-.dir-entry-row {
+.entry-row {
   margin-top: 0.2em;
   margin-bottom: 0.2em;
   padding: 0.3em 0;
 }
-.dir-entry-row:hover {
+.entry-row:hover {
   background-color: #f8f8f8;
 }
-.dir-entry-row:hover .hoverable {
+.entry-row:hover .hoverable {
   display: inline-block;
 }
-
-.dir-entry-size {
+.entry-size {
   padding-left: 1em;
 }
-.dir-entry-name {
+.entry-name {
+  padding: 0.2em 1em 0.2em 0.2em;
+
   word-wrap: break-word;
   min-width: 12em;
   max-width: 30em;
-  padding-right: 1em;
+}
+.entry-action {
+  padding: 0 0.5em;
 }
 .entry-em {
   font-weight: bold;
@@ -41,22 +44,19 @@
 {% block body %}
 <table id="dir-entries">
   <tr id="dir-entries-header">
-    <th id="deh-dl"><object type="image/svg+xml" data="{{ url_for('static_handler', path='dl.svg') }}" 
-          width="16" height="16"></th>
+    <th id="deh-dl" class="dl-icon icon"> </th>
     <th>name &nbsp;</th>
-    <!--th>type &nbsp;</th-->
+    {# <th>type &nbsp;</th> -#}
     <th>size &nbsp;</th>
-    <!--th>access &nbsp;</th-->
+    {# <th>access &nbsp;</th> -#}
     <th>action &nbsp;</th>
   </tr>
   {% for entry in lsdir -%}
-  <tr class="dir-entry-row">
-    <td class="dir-entry-icon">
-      <a href="{{ entry.href + '?dl' }}">
-        <img src="{{ entry.icon_src }}" alt="{{ entry.icon_alt }}" width="16"/>
-      </a>
+  <tr class="entry-row">
+    <td class="entry-icon">
+      <a class="{{ entry.icon_src }} block icon" href="{{ entry.href + '?dl' }}"></a>
     </td>
-    <td class="dir-entry-name">
+    <td class="entry-name">
       {% if rename == entry.name -%}
       <form method="POST">
         <input type="hidden" name="action" value="rename">
@@ -69,10 +69,13 @@
       {% else -%}
       <a href="{{ entry.href }}">{{ entry.name }}</a>
       {% endif -%}
+      {% if entry.play -%}
+      <br><audio src="{{ entry.href }}" autoplay="true" controls>No sound :(</audio>
+      {% endif -%}
     </td>
-    <!--td class="dir-entry-type">{{ entry.mime }}</td-->
-    <td class="pull-right dir-entry-size">{{ entry.size }}</td>
-    <!--td class="pull-right dir-entry-access">
+    {# <td class="entry-type">{{ entry.mime }}</td> -#}
+    <td class="pull-right entry-size">{{ entry.size }}</td>
+    {# <td class="pull-right entry-access">
       {% if entry.shared -%}
       <a class="entry-em" href="{{ entry.shared }}">public</a>
       {% elif not entry.isdir -%}
@@ -82,13 +85,13 @@
         <input type="submit" name="share" value="share">
       </form>
       {% endif -%}
-    </td-->
-    <td class="dir-entry-action">
+    </td> -#}
+    <td class="entry-action">
       {% if entry.rename_url -%}
       <a href="{{ entry.rename_url }}" class="hoverable">
         <input type="button" value="rename">
       </a>
-      {% endif %}
+      {% endif -%}
       <form class="hoverable" action="" method="POST">
         <input type="hidden" name="action" value="delete">
         <input type="hidden" name="filename" value="{{ entry.name }}">
@@ -104,4 +107,13 @@
   <input type="file" name="file"/>
   <input type="submit" name="upload" value="Upload"/>
 </form>
+{# after the main content is shown: #}
+<style id="dir-css">
+.block { display: block; }
+.icon::after { content: '.'; }
+.icon { background-size: 1.2em; width: 20px; background-repeat: no-repeat; text-indent: -200em; }
+.dir-icon { background-image: url("data:image/png;base64,{% include "res/dir.png.base64" -%}"); }
+.file-icon { background-image: url("data:image/gif;base64,{% include "res/file.gif.base64" -%}"); }
+.dl-icon { background-image: url("data:image/svg+xml;base64,{% include "res/dl.svg.base64" %}"); }
+</style>
 {% endblock %}

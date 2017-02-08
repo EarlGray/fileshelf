@@ -116,7 +116,6 @@
     <label for="editor-font-size">Font size:</label>
     <input id="editor-font-size" type="number" min="7" max="36" value="10">
 
-    </div>
   </div>
 </details>
 <div id="editor-commands">
@@ -146,7 +145,8 @@ var loadCodemirror = function (path, loaded, src) {
     loaded();
   };
   js_el.src = src;
-  document.body.appendChild(js_el);
+  var page = document.querySelector('#page');
+  page.appendChild(js_el);
 };
 
 window.onload = function () {

@@ -3,7 +3,6 @@ import os
 import stat
 import errno
 import shutil
-import mimetypes
 
 import doh.content as content
 
@@ -16,10 +15,6 @@ class LocalStorage:
 
     def _fullpath(self, *args):
         return os.path.join(self.storage_dir, *args)
-        # fullpath = self.storage_dir
-        # if args:
-        #     path = os.path.join(*args)
-        #     fullpath = os.path.join(
 
     def make_dir(self, path):
         path = self._fullpath(path)
@@ -63,17 +58,16 @@ class LocalStorage:
         entry.mimetype = content.guess_mime(path)
 
         def is_text():
-            if entry.mimetype:
-                return entry.mimetype.startswith('text/')
-            return False
+            return entry.mimetype and entry.mimetype.startswith('text/')
+
+        def is_audio():
+            return entry.mimetype and entry.mimetype.startswith('audio/')
 
         def is_viewable():
-            if entry.mimetype:
-                if entry.mimetype in ['application/pdf']:
-                    return True
-            return False
+            return entry.mimetype and entry.mimetype in ['application/pdf']
 
         entry.is_text = is_text
+        entry.is_audio = is_audio
         entry.is_viewable = is_viewable
 
         entry.can_rename = True
@@ -86,7 +80,6 @@ class LocalStorage:
     def exists(self, path):
         path = self._fullpath(path)
         ret = os.path.exists(path)
-        print('STORAGE: exists(%s) = %s' % (path, ret))
         return ret
 
     def is_dir(self, path):
@@ -98,7 +91,7 @@ class LocalStorage:
         try:
             text = io.open(path, encoding='utf8').read()
             return text, None
-        except (IOError, OSError) as e:
+        except (IOError, OSError, UnicodeDecodeError) as e:
             return None, e
 
     def write_text(self, path, data):
@@ -106,5 +99,5 @@ class LocalStorage:
         try:
             with io.open(path, 'w', encoding='utf8') as f:
                 f.write(data.decode('utf8'))
-        except (IOError, OSError) as e:
+        except (IOError, OSError, UnicodeDecodeError) as e:
             return e

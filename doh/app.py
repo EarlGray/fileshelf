@@ -10,7 +10,7 @@ from werkzeug.utils import secure_filename
 import doh.url as url
 import doh.content as content
 from doh.rproxy import ReverseProxied
-from doh.storage.local import LocalStorage
+from doh.storage import LocalStorage
 
 
 def default_conf(appdir):
@@ -122,7 +122,8 @@ class DohApp:
 
             entry = self.storage.file_info(path)
             if entry.is_dir:
-                return self._render_dir(path)
+                play = req.args.get('play')
+                return self._render_dir(path, play=play)
 
             if 'edit' in req.args:
                 text, e = self.storage.read_text(path)
@@ -198,8 +199,10 @@ class DohApp:
         entry.see_url = None
         if entry.is_text():
             entry.see_url = entry.href + '?edit'
-        # elif entry.is_audio():
-        #     entry.see_url = entry.href + '?play='
+        elif entry.is_audio():
+            dirpath = os.path.dirname(path)
+            filename = os.path.basename(path)
+            entry.see_url = url.my(dirpath) + '?play=' + filename
         elif entry.is_viewable():
             entry.see_url = entry.href + '?see'
 
@@ -239,7 +242,7 @@ class DohApp:
         }
         return flask.render_template('500.htm', **args), 500
 
-    def _render_dir(self, path):
+    def _render_dir(self, path, play=None):
         lsdir = []
         try:
             for fname in self.storage.list_dir(path):
@@ -252,17 +255,17 @@ class DohApp:
                     'size': entry.size,
                     'isdir': entry.is_dir,
                     'see_url': entry.see_url,
-                    'icon_src': 'dir.png' if entry.is_dir else 'file.png',
-                    'icon_alt': 'd' if entry.is_dir else '-'
                     # 'shared': entry.shared,
                 }
 
                 if entry.is_dir:
-                    lsfile['icon_src'] = url.res('dir.png')
+                    lsfile['icon_src'] = 'dir-icon'
                     lsfile['icon_alt'] = 'd'
                 else:
-                    lsfile['icon_src'] = url.res('file.png')
+                    lsfile['icon_src'] = 'file-icon'
                     lsfile['icon_alt'] = '-'
+                if fname == play:
+                    lsfile['play'] = True
 
                 if entry.can_rename:
                     lsfile['rename_url'] = path + '?rename=' + fname
@@ -310,7 +313,7 @@ class DohApp:
         new = os.path.join(path, newname)
         try:
             self.storage.rename(old, new)
-            return flask.redirect(flask.url_for('path_handler', path=path))
+            return flask.redirect(url.my(path))
         except IOError as e:
             return self.r500(e)
 
@@ -359,6 +362,6 @@ class DohApp:
     #         os.symlink(fpath, link)
     #         self.shared[fpath] = fname
     #         print('shared:', fpath, ' => ', fname)
-    #         return flask.redirect(flask.url_for('path_handler', path=path))
+    #         return flask.redirect(url.my(path))
     #     except OSError as e:
     #         return self.r500(e)

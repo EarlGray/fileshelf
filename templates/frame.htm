@@ -2,14 +2,15 @@
 {% block body %}
 <style>
 #file-frame {
-  position: absolute;
-  width: 95%;
-  height: 85%;
+  width: 100%;
+  height: calc(100vh - 5.5em); 
+  position: relative;
   box-shadow: 0 0 1.5em black; 
 }
 </style>
 <div id="frame-container" class="centered">
   <iframe id="file-frame" name="file-preview"
+          class="centered" frameborder="0"
           src="{{ frame_url }}"
           >
     <div class="no-such">
