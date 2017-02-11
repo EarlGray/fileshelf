@@ -30,6 +30,7 @@ def default_conf(appdir):
         'storage_dir': os.path.join(appdir, 'storage'),
         'static_dir': os.path.join(appdir, 'static'),
         'share_dir': os.path.join(appdir, 'share'),
+        'data_dir': os.path.join(appdir, 'data'),
 
         'template_dir': '../templates'
     }
@@ -48,13 +49,14 @@ class DohApp:
         app.storage_dir = conf['storage_dir']
         app.static_dir = conf['static_dir']
         app.share_dir = conf['share_dir']
+        app.data_dir = conf['data_dir']
         # monkey-patch the environment to handle 'X-Forwarded-For'
         # 'X-Forwarded-Proto', etc:
         app.wsgi_app = ReverseProxied(app.wsgi_app)
 
         # self.shared = self._scan_share(app.share_dir)
 
-        self.storage = LocalStorage(app.storage_dir)
+        self.storage = LocalStorage(app.storage_dir, app.data_dir)
 
         self.conf = conf
 
@@ -74,7 +76,7 @@ class DohApp:
             auth = req.headers.get('Authorization')
             user = ''
             if auth and auth.startswith('Basic '):
-                user = 'by user=%s' % b64decode(auth.split()[1]).split(':')[0]
+                user = b64decode(auth.split()[1]).split(':')[0]
             print('### method=%s path=%s user=%s' % (req.method, path, user))
 
             if req.method == 'POST':
@@ -114,6 +116,31 @@ class DohApp:
                             return self.r400(e)
                         return flask.redirect(url.my(name) + '?edit')
                     return self.r400('cannot create file with type ' + mime)
+                if action == 'cut':
+                    name = req.form.get('name').strip()
+                    name = os.path.join(path, name)
+                    e = self.storage.clipboard_cut(name)
+                    if e:
+                        return self.r400(e)
+                    return flask.redirect(url.my(path))
+                if action == 'copy':
+                    name = req.form.get('name')
+                    name = os.path.join(path, name)
+                    e = self.storage.clipboard_copy(name)
+                    if e:
+                        return self.r400(e)
+                    return flask.redirect(url.my(path))
+                if action in ['paste', 'cb_clear']:
+                    into = path if action == 'paste' else None
+                    e = self.storage.clipboard_paste(into, dryrun=False)
+                    if e:
+                        return self.r400(e)
+                    return flask.redirect(url.my(path))
+                if action == 'cb_clear':
+                    e = self.storage.clipboard_clear()
+                    if e:
+                        return self.r400(e)
+                    return flask.redirect(url.my(path))
 
                 return self.r400('unknown action %s' % action)
 
@@ -272,13 +299,26 @@ class DohApp:
 
                 lsdir.append(lsfile)
 
+            clipboard = []
+            for entry in self.storage.clipboard_list():
+                loc = entry['tmp'] if entry['cut'] else entry['path']
+                isdir = self.storage.is_dir(loc)
+
+                e = {}
+                e['do'] = 'cut' if entry['cut'] else 'copy'
+                e['path'] = entry['path']
+                e['icon_src'] = 'dir-icon' if isdir else 'file-icon'
+                clipboard.append(e)
+
             lsdir = sorted(lsdir, key=lambda d: (not d['isdir'], d['name']))
+
             templvars = {
                 'path': path,
                 'lsdir': lsdir,
                 'title': path,
                 'path_prefixes': self._gen_prefixes(path),
-                'rename': flask.request.args.get('rename')
+                'rename': flask.request.args.get('rename'),
+                'clipboard': clipboard
             }
             return flask.render_template('dir.htm', **templvars)
         except OSError as e:

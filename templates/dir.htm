@@ -25,6 +25,7 @@
 }
 .entry-size {
   padding-left: 1em;
+  font-size: 90%;
 }
 .entry-name {
   padding: 0.2em 1em 0.2em 0.2em;
@@ -42,6 +43,48 @@
 </style>
 {% endblock %}
 {% block body %}
+{% if clipboard %}
+<details>
+  <summary>
+    clipboard
+    <form class="inline" method="POST">
+      <input type="hidden" name="action" value="cb_clear">
+      <input type="submit" name="clear" value="clear">
+    </form>
+    <form class="inline" method="POST">
+      <input type="hidden" name="action" value="paste">
+      <input type="submit" name="paste" value="paste">
+    </form>
+  </summary>
+  <div>
+    <table>
+      <tbody>
+        <tr>
+          <th>type</th>
+          <th>path</th>
+          <th></th>
+          <th>action</th>
+        </tr>
+        {% for entry in clipboard -%}
+        <tr>
+          <td class="{{ entry.icon_src }} icon"></td>
+          <td>{{ entry.path }}</td>
+          <td>{{ entry.do }}</td>
+          <td>
+            <form method="POST">
+              <input type="hidden" name="action" value="restore">
+              <input type="hidden" name="path" value="{{ entry.path }}">
+              <input type="submit" name="restore" value="restore">
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</details>
+<hr>
+{% endif %}
 <table id="dir-entries">
   <tr id="dir-entries-header">
     <th id="deh-dl" class="dl-icon icon"> </th>
@@ -87,6 +130,16 @@
       {% endif -%}
     </td> -#}
     <td class="entry-action">
+      <form class="hoverable" method="POST">
+        <input type="hidden" name="action" value="copy">
+        <input type="hidden" name="name" value="{{ entry.name }}">
+        <input type="submit" name="copy" value="copy">
+      </form>
+      <form class="hoverable" method="POST">
+        <input type="hidden" name="action" value="cut">
+        <input type="hidden" name="name" value="{{ entry.name }}">
+        <input type="submit" name="cut" value="cut">
+      </form>
       {% if entry.rename_url -%}
       <a href="{{ entry.rename_url }}" class="hoverable">
         <input type="button" value="rename">
@@ -107,7 +160,7 @@
   <input type="file" name="file"/>
   <input type="submit" name="upload" value="Upload"/>
 </form>
-{# after the main content is shown: #}
+{# after the main content is shown: -#}
 <style id="dir-css">
 .block { display: block; }
 .icon::after { content: '.'; }
