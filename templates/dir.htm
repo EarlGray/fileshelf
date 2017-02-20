@@ -95,7 +95,7 @@
     <th>action &nbsp;</th>
   </tr>
   {% for entry in lsdir -%}
-  <tr class="entry-row">
+  <tr class="entry-row" {% if entry.is_hidden -%}data-hidden{% endif -%}>
     <td class="entry-icon">
       <a class="{{ entry.icon_src }} block icon" href="{{ entry.href + '?dl' }}"></a>
     </td>
@@ -164,6 +164,7 @@
 <style id="dir-css">
 .block { display: block; }
 .icon::after { content: '.'; }
+tr[data-hidden] { opacity: 0.55; }
 .icon { background-size: 1.2em; width: 20px; background-repeat: no-repeat; text-indent: -200em; }
 .dir-icon { background-image: url("data:image/png;base64,{% include "res/dir.png.base64" -%}"); }
 .file-icon { background-image: url("data:image/gif;base64,{% include "res/file.gif.base64" -%}"); }

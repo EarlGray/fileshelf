@@ -281,6 +281,7 @@ class DohApp:
                     'href': entry.href,
                     'size': entry.size,
                     'isdir': entry.is_dir,
+                    'is_hidden': fname.startswith('.'),
                     'see_url': entry.see_url,
                     # 'shared': entry.shared,
                 }
