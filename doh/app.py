@@ -295,7 +295,7 @@ class DohApp:
                     lsfile['play'] = True
 
                 if entry.can_rename:
-                    lsfile['rename_url'] = path + '?rename=' + fname
+                    lsfile['rename_url'] = url.my(path) + '?rename=' + fname
 
                 lsdir.append(lsfile)
 
