@@ -88,6 +88,8 @@ class LocalStorage:
         entry.is_audio = is_audio
         entry.is_viewable = is_viewable
 
+        entry.ctime = st.st_ctime
+
         entry.can_rename = True
         entry.can_delete = True
         entry.can_read = True

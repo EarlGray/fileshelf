@@ -27,6 +27,11 @@
   padding-left: 1em;
   font-size: 90%;
 }
+.entry-ctime {
+  padding-right: 1em;
+  font-size: 90%;
+  color: #666;
+}
 .entry-name {
   padding: 0.2em 1em 0.2em 0.2em;
 
@@ -57,7 +62,7 @@
     </form>
   </summary>
   <div>
-    <table>
+    <table id="clipboard-tbl">
       <tbody>
         <tr>
           <th>type</th>
@@ -74,7 +79,7 @@
             <form method="POST">
               <input type="hidden" name="action" value="restore">
               <input type="hidden" name="path" value="{{ entry.path }}">
-              <input type="submit" name="restore" value="restore">
+              <input type="submit" name="restore" value="restore" disabled>
             </form>
           </td>
         </tr>
@@ -90,12 +95,15 @@
     <th id="deh-dl" class="dl-icon icon"> </th>
     <th>name &nbsp;</th>
     {# <th>type &nbsp;</th> -#}
+    <th>created &nbsp;</th>
     <th>size &nbsp;</th>
     {# <th>access &nbsp;</th> -#}
     <th>action &nbsp;</th>
   </tr>
   {% for entry in lsdir -%}
-  <tr class="entry-row" {% if entry.is_hidden -%}data-hidden{% endif -%}>
+  <tr class="entry-row"
+      {% if entry.is_hidden -%}data-hidden{% endif -%}
+      data-ctime="{{ entry.ctime }}">
     <td class="entry-icon">
       <a class="{{ entry.icon_src }} block icon" href="{{ entry.href + '?dl' }}"></a>
     </td>
@@ -117,6 +125,7 @@
       {% endif -%}
     </td>
     {# <td class="entry-type">{{ entry.mime }}</td> -#}
+    <td class="entry-ctime">{{ entry.created_at }}</td>
     <td class="pull-right entry-size">{{ entry.size }}</td>
     {# <td class="pull-right entry-access">
       {% if entry.shared -%}

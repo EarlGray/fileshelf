@@ -1,6 +1,7 @@
 from __future__ import print_function
 
 import os
+import time
 from base64 import decodestring as b64decode
 
 import flask
@@ -283,6 +284,8 @@ class DohApp:
                     'isdir': entry.is_dir,
                     'is_hidden': fname.startswith('.'),
                     'see_url': entry.see_url,
+                    'ctime': entry.ctime,
+                    'created_at': content.smart_time(entry.ctime),
                     # 'shared': entry.shared,
                 }
 
