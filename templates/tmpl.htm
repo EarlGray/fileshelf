@@ -14,28 +14,30 @@
   {% endfor -%}
   {% block style %}
   {% endblock -%}
+  <style id="fs-css">
+  {% include 'res/fs.css' -%}
+  </style>
 </head>
 <body>
 <div id="page" class="centered">
-  <h1>
-    <a href="{{ url_for('path_handler') }}">FS:</a>
-    {% for prefix, href in path_prefixes -%}
-    {% if href -%} / <a href="{{ href }}">{{ prefix }}</a>
-    {% else -%}
-    / <span class="no-such">{{ prefix }}</span>
-    {% endif -%}
-    {% endfor -%}
-  </h1>
-  <hr/>
+  <div id="header">
+    <h1 id="addressbar" class="inline">
+      <a href="{{ url_for('path_handler') }}">FS:</a>
+      {% for prefix, href in path_prefixes -%}
+      {% if href -%} / <a href="{{ href }}">{{ prefix }}</a>
+      {% else -%}
+      / <span class="no-such">{{ prefix }}</span>
+      {% endif -%}
+      {% endfor -%}
+    </h1>
+    <span id="toolbar">
+    {% block toolbar %}
+    {% endblock %}
+    </span>
+    <hr/>
+  </div>
   {% block body %}
   {% endblock %}
 </div>
-<style id="fs-css">
-#page {
-  min-width: 30em;
-  max-width: 60em;
-}
-{% include 'res/fs.css' -%}
-</style>
 </body>
 </html>

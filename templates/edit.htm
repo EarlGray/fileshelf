@@ -1,5 +1,5 @@
 {% extends "tmpl.htm" %}
-{% block body %}
+{% block style %}
 <style>
 #text-editor {
   font-family: monospace;
@@ -12,20 +12,51 @@
 }
 #editor-settings select {
   margin-right: 3em;
+  position: fixed;
 }
 #editor-commands {
-  padding: 1em;
+  /*padding: 1em;*/
 }
 #settings-container {
-  margin: 1em;
+  margin: 0 1em;
   float: right;
 }
 .CodeMirror {
   border: 1px solid #888;
 }
+#save-btn {
+  font-size: 12pt;
+  border-radius: 0.4em;
+
+  border: none;
+  background-color: blue;
+  border: 2px solid blue;
+  color: white;
+}
+#save-btn:disabled {
+  border: 2px solid grey;
+  background-color: white;
+  color: #aaa;
+}
+.save-btn-failed {
+  background-color: red;
+  border: 2px solid red;
+  color: white;
+}
+.save-btn-saving {
+  background-color: white;
+  border: 2px solid grey;
+  color: green;
+}
 </style>
+{% endblock %}
+
+{% block toolbar %}
+<span id="editor-commands">
+  <button id="save-btn" disabled>Save</button>
+</span>
 <details id="settings-container">
-  <summary>Editor Settings</summary>
+  <summary>Settings</summary>
   <div id="editor-settings">
     <hr>
     <p>
@@ -59,7 +90,7 @@
       <option value="lua" data-fext="lua">Lua</option>
       <option value="markdown" data-fext="md,markdown">Markdown</option>
       <option value="mbox" data-fext="mbox">mbox</option>
-      <option value="mllike" data-fext="ml">ml-like (Ocaml/SML)</option>
+      <option value="mllike" data-fext="ml">Ocaml/SML</option>
       <option value="perl" data-fext="pl,pm">Perl</option>
       <option value="php" data-fext="php">PHP</option>
       <option value="powershell" data-fext="ps1">Powershell</option>
@@ -118,10 +149,10 @@
 
   </div>
 </details>
-<div id="editor-commands">
-  <button id="save-btn">Save</button>
-</div>
-<textarea id="text-editor" cols="90"
+{% endblock %}
+
+{% block body %}
+<textarea id="text-editor" cols="90" rows="15"
     spellcheck="false" autofocus>
 {{ text }}
 </textarea>
@@ -270,14 +301,18 @@ window.onload = function () {
     var text = the_editor.getValue();
     var url = location.pathname + '?update';
 
+    saveButton.classList.add('save-btn-saving');
+
     var xhr = new XMLHttpRequest();
     xhr.onreadystatechange = function () {
       if (xhr.readyState === XMLHttpRequest.DONE) {
+        saveButton.classList.remove('save-btn-saving');
         if (xhr.status == 200) {
           the_editor.markClean();
           saveButton.disabled = true;
           console.log('UPDATE: xhr.responseText: ' + xhr.responseText);
         } else {
+          saveButton.classList.add('save-btn-failed');
           console.log('UPDATE: xhr.status = ' + xhr.status);
         }
       }

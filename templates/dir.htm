@@ -47,9 +47,13 @@
 }
 </style>
 {% endblock %}
+
+{% block toolbar %}
+{% endblock %}
+
 {% block body %}
 {% if clipboard %}
-<details>
+<details style="display: inline-block; padding-left: 0.2em;">
   <summary>
     clipboard
     <form class="inline" method="POST">
