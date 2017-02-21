@@ -102,7 +102,7 @@
   </tr>
   {% for entry in lsdir -%}
   <tr class="entry-row"
-      {% if entry.is_hidden -%}data-hidden{% endif -%}
+      {% if entry.is_hidden -%}data-hidden {% endif -%}
       data-ctime="{{ entry.ctime }}">
     <td class="entry-icon">
       <a class="{{ entry.icon_src }} block icon" href="{{ entry.href + '?dl' }}"></a>
