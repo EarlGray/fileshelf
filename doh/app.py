@@ -285,6 +285,7 @@ class DohApp:
                     'is_hidden': fname.startswith('.'),
                     'see_url': entry.see_url,
                     'ctime': entry.ctime,
+                    'full_ctime': time.ctime(entry.ctime)+' '+time.tzname[0],
                     'created_at': content.smart_time(entry.ctime),
                     # 'shared': entry.shared,
                 }

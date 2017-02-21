@@ -43,6 +43,7 @@ def smart_time(tm):
         tm = time.localtime(tm)
     if not isinstance(tm, time.struct_time):
         raise ValueError('Expected time.struct_time or float')
+
     t = time.strftime('%H:%M', tm)
 
     now = time.localtime()

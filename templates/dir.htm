@@ -125,7 +125,7 @@
       {% endif -%}
     </td>
     {# <td class="entry-type">{{ entry.mime }}</td> -#}
-    <td class="entry-ctime">{{ entry.created_at }}</td>
+    <td class="entry-ctime" title="{{ entry.full_ctime }}">{{ entry.created_at }}</td>
     <td class="pull-right entry-size">{{ entry.size }}</td>
     {# <td class="pull-right entry-access">
       {% if entry.shared -%}
