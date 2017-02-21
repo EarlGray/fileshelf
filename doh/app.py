@@ -158,8 +158,10 @@ class DohApp:
                 if e:
                     return self.r400(e)
                 args = {
-                    'js_links': [url.codemirror('codemirror.min.js')],
-                    'css_links': [url.codemirror('codemirror.min.css')],
+                    'js_links': [url.codemirror('codemirror.min.js'),
+                                 url.codemirror('addon/dialog/dialog.js')],
+                    'css_links': [url.codemirror('codemirror.min.css'),
+                                  url.codemirror('addon/dialog/dialog.css')],
                     'codemirror_root': url.codemirror(),
                     'text': text,
                     'mimetype': content.guess_mime(path),

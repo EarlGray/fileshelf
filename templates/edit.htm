@@ -8,14 +8,12 @@
 }
 #editor-settings {
   padding: 0.5em 0;
-  /*float: right;*/
 }
 #editor-settings select {
   margin-right: 3em;
   position: fixed;
 }
 #editor-commands {
-  /*padding: 1em;*/
 }
 #settings-container {
   margin: 0 1em;
@@ -180,6 +178,37 @@ var loadCodemirror = function (path, loaded, src) {
   page.appendChild(js_el);
 };
 
+var saveText = function () {
+  console.log('saving...');
+  var text = the_editor.getValue();
+  var url = location.pathname + '?update';
+
+  var saveButton = document.querySelector('#save-btn');
+  saveButton.classList.add('save-btn-saving');
+
+  var xhr = new XMLHttpRequest();
+  xhr.onreadystatechange = function () {
+    if (xhr.readyState !== XMLHttpRequest.DONE)
+      return;
+
+    saveButton.classList.remove('save-btn-saving');
+    if (xhr.status == 200) {
+      the_editor.markClean();
+      saveButton.disabled = true;
+      console.log('UPDATE: xhr.responseText: ' + xhr.responseText);
+    } else {
+      saveButton.classList.add('save-btn-failed');
+      console.log('UPDATE: xhr.status = ' + xhr.status);
+    }
+  };
+  xhr.onerror = function () {
+    console.log('xhr error');
+  };
+  xhr.open('POST', url);
+  xhr.setRequestHeader('Content-Type', 'text/plain');
+  xhr.send(text);
+};
+
 window.onload = function () {
   var $ = document.querySelector;
   var selectMode = document.querySelector('select#editor-mode');
@@ -206,10 +235,13 @@ window.onload = function () {
     return null;
   };
 
+  CodeMirror.commands.save = saveText;
+
   the_editor = CodeMirror.fromTextArea(textarea, {
       lineNumbers: true
   });
   the_editor.focus();
+
 
   /* mode */
   selectMode.onchange = function (event) {
@@ -274,10 +306,11 @@ window.onload = function () {
 
   /* show line numbers */
   var checkLineNumbers = document.querySelector('input#editor-line-numbers');
-  checkLineNumbers.onchange = function () {
+  var toggleLineNumbers = function () {
     the_editor.setOption('lineNumbers', checkLineNumbers.checked);
   };
   checkLineNumbers.checked = true;
+  checkLineNumbers.onchange = toggleLineNumbers;
   checkLineNumbers.onchange();
 
   /* line wrap */
@@ -289,38 +322,13 @@ window.onload = function () {
   checkLineWrap.onchange();
 
   /* resize */
-  window.onresize = function () {
-    var cmdiv = document.querySelector('.CodeMirror');
-    the_editor.setSize(null, window.innerHeight - cmdiv.offsetTop - 30);
-  };
-  window.onresize();
+  var cmdiv = document.querySelector('.CodeMirror');
+  var cmtop = cmdiv.offsetTop;
+  cmdiv.style.height = 'calc(100vh - 1em - '+cmtop+'px)';
 
   /* save button */
   var saveButton = document.querySelector('#save-btn');
-  saveButton.onclick = function () {
-    var text = the_editor.getValue();
-    var url = location.pathname + '?update';
-
-    saveButton.classList.add('save-btn-saving');
-
-    var xhr = new XMLHttpRequest();
-    xhr.onreadystatechange = function () {
-      if (xhr.readyState === XMLHttpRequest.DONE) {
-        saveButton.classList.remove('save-btn-saving');
-        if (xhr.status == 200) {
-          the_editor.markClean();
-          saveButton.disabled = true;
-          console.log('UPDATE: xhr.responseText: ' + xhr.responseText);
-        } else {
-          saveButton.classList.add('save-btn-failed');
-          console.log('UPDATE: xhr.status = ' + xhr.status);
-        }
-      }
-    };
-    xhr.open('POST', url);
-    xhr.setRequestHeader('Content-Type', 'text/plain');
-    xhr.send(text);
-  };
+  saveButton.onclick = saveText;
   saveButton.disabled = true;
   the_editor.on('change', function () {
     saveButton.disabled = the_editor.isClean();
