@@ -13,8 +13,6 @@
   margin-right: 3em;
   position: fixed;
 }
-#editor-commands {
-}
 #settings-container {
   margin: 0 1em;
   float: right;
@@ -111,9 +109,9 @@
       <option value="yaml" data-fext="yaml">YAML</option>
     </select>
 
+    {#<p>
     <!-- TODO -->
-    <p>
-    {#<label for="select">Tabsize</label>
+    <label for="select">Tabsize</label>
     <select id="editor-tabsize">
       <option value="2">2</option>
       <option value="4" selected>4</option>
@@ -148,10 +146,8 @@
 {% endblock %}
 
 {% block body %}
-<textarea id="text-editor" cols="90" rows="15"
-    spellcheck="false" autofocus>
-{{ text }}
-</textarea>
+<textarea id="text-editor" cols="90" rows="150"
+    spellcheck="false" autofocus>{{ text }}</textarea>
 <script>
 var mimetype = "{{ mimetype }}";
 
