@@ -113,14 +113,12 @@
 
     <!-- TODO -->
     <p>
-    <!--label for="select">Tabsize</label>
+    {#<label for="select">Tabsize</label>
     <select id="editor-tabsize">
       <option value="2">2</option>
       <option value="4" selected>4</option>
       <option value="8">8</option>
-    </select-->
-
-    <!-- TODO: font -->
+    </select>#}
 
     <p>
     <label>Show line numbers:&nbsp;</label><input id="editor-line-numbers" type="checkbox">
@@ -209,6 +207,28 @@ var saveText = function () {
   xhr.send(text);
 };
 
+var quitEditor = function () {
+  var path = window.location.pathname.split('/');
+  path.pop();
+  var url = path.join('/');
+  window.location = url;
+};
+
+var setupVim = function () {
+  /* ex commands */
+  CodeMirror.Vim.defineEx('quit', 'q', function (wo, inp) {
+    if (the_editor.isClean() || inp.input.endsWith('!')) {
+      quitEditor();
+    } else {
+      var msg = '<span style="color: red">There are unsaved changes</span>';
+      the_editor.openNotification(msg, { bottom: true });
+    }
+  });
+
+  /* key mappings */
+  CodeMirror.Vim.map(';', ':', 'normal');
+};
+
 window.onload = function () {
   var $ = document.querySelector;
   var selectMode = document.querySelector('select#editor-mode');
@@ -275,6 +295,8 @@ window.onload = function () {
 
     loadCodemirror('keymap/' + keymap + '.min.js', function () {
       the_editor.setOption('keyMap', keymap);
+      if (keymap == 'vim')
+        setupVim();
       console.log('editor keymap changed to ' + keymap);
     });
   };
