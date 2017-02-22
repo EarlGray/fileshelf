@@ -343,6 +343,7 @@ window.onload = function () {
   var cmdiv = document.querySelector('.CodeMirror');
   var cmtop = cmdiv.offsetTop;
   cmdiv.style.height = 'calc(100vh - 1em - '+cmtop+'px)';
+  the_editor.refresh();
 
   /* save button */
   var saveButton = document.querySelector('#save-btn');
