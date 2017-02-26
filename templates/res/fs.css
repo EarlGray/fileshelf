@@ -1,4 +1,7 @@
-a { text-decoration: none; }
+a, a:visited {
+  text-decoration: none;
+  color: rgb(0, 0, 230);
+}
 #page {
   min-width: 30em;
   max-width: 60em;
