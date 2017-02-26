@@ -1,6 +1,9 @@
 import time
 import mimetypes
 
+from doh.content.Handler import Handler
+from doh.content.Plugins import Plugins
+
 mime_by_extension = {
     'org': 'text/x-org',
     'scm': 'text/x-scheme',
@@ -58,4 +61,4 @@ def smart_time(tm):
     return t + time.strftime(', %x', tm)
 
 
-__all__ = [guess_mime, smart_time]
+__all__ = [guess_mime, smart_time, Handler, Plugins]

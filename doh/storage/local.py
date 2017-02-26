@@ -45,6 +45,22 @@ class LocalStorage:
         path = self._fullpath(path)
         return os.listdir(path)
 
+    def move_from_fpath(self, fpath, path, name):
+        """ moves a file from external `fpath` to internal `path`/`name` """
+        if os.path.sep in name:
+            return ValueError('filename `%s` contains os.sep' % name)
+        try:
+            dst = self._fullpath(path, name)
+            # just a security precaution:
+            if not dst.startswith(self._fullpath()):
+                print('dst=%s, fullpath=%s' % (dst, self._fullpath()))
+                return ValueError('does not start with self._fullpath()')
+
+            print('mv %s -> %s' % (fpath, dst))
+            shutil.move(fpath, dst)
+        except (OSError, IOError) as e:
+            return e
+
     def rename(self, oldpath, newpath):
         old = self._fullpath(oldpath)
         new = self._fullpath(newpath)

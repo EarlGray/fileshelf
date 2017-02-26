@@ -2,6 +2,7 @@ from __future__ import print_function
 
 import os
 import time
+import uuid
 from base64 import decodestring as b64decode
 
 import flask
@@ -30,8 +31,8 @@ def default_conf(appdir):
         'app_dir': appdir,
         'storage_dir': os.path.join(appdir, 'storage'),
         'static_dir': os.path.join(appdir, 'static'),
-        'share_dir': os.path.join(appdir, 'share'),
         'data_dir': os.path.join(appdir, 'data'),
+        # 'share_dir': os.path.join(appdir, 'share'),
 
         'template_dir': '../templates'
     }
@@ -39,7 +40,9 @@ def default_conf(appdir):
 
 class DohApp:
     def __init__(self, config):
-        conf = default_conf(config.get('app_dir', os.getcwd()))
+        self.app_dir = config.get('app_dir', os.getcwd())
+
+        conf = default_conf(self.app_dir)
         conf.update(config)
 
         template_dir = conf['template_dir']
@@ -49,8 +52,9 @@ class DohApp:
         app.debug = conf['debug']
         app.storage_dir = conf['storage_dir']
         app.static_dir = conf['static_dir']
-        app.share_dir = conf['share_dir']
         app.data_dir = conf['data_dir']
+        # app.share_dir = conf['share_dir']
+
         # monkey-patch the environment to handle 'X-Forwarded-For'
         # 'X-Forwarded-Proto', etc:
         app.wsgi_app = ReverseProxied(app.wsgi_app)
@@ -58,6 +62,9 @@ class DohApp:
         # self.shared = self._scan_share(app.share_dir)
 
         self.storage = LocalStorage(app.storage_dir, app.data_dir)
+
+        plugin_dir = os.path.join(self.app_dir, 'doh/content')
+        self.plugins = content.Plugins(plugin_dir)
 
         self.conf = conf
 
@@ -68,6 +75,15 @@ class DohApp:
         @app.errorhandler(500)
         def internal_error(e):
             return self.r500(e)
+
+        @app.route(url.join(url._res, '<path:path>'))
+        def static_handler(path):
+            fname = os.path.join(app.static_dir, path)
+            if not os.path.exists(fname):
+                return self.r404(path)
+
+            # print('Serving %s' % fname)
+            return flask.send_file(fname)
 
         @app.route(url._my, defaults={'path': ''}, methods=['GET', 'POST'])
         @app.route(url.join(url._my, '<path:path>'), methods=['GET', 'POST'])
@@ -80,140 +96,138 @@ class DohApp:
                 user = b64decode(auth.split()[1]).split(':')[0]
             print('### method=%s path=%s user=%s' % (req.method, path, user))
 
+            if req.method == 'GET':
+                return self._path_get(req, path)
             if req.method == 'POST':
-                if 'update' in req.args:
-                    print('update request for %s:' % path)
-                    print(req.data)
-                    print('------------------------------')
-                    e = self.storage.write_text(path, req.data)
-                    if e:
-                        return flask.Response(str(e)), 400
-                    return flask.Response("saved"), 200
+                return self._path_post(req, path)
+            return self.r400('Unknown method ' + req.method)
 
-                print(req.form)
-                action = req.form['action']
-                if action == 'upload':
-                    if 'file' not in req.files:
-                        return self.r400('no file in POST')
+        # @app.route(url.join(url._pub, '<path:path>'))
+        # def pub_handler(path):
+        #     fname = secure_filename(path)
+        #     fname = os.path.join(app.share_dir, fname)
+        #     if not os.path.exists(fname):
+        #         return self.r404(path)
 
-                    return self._upload(req, path)
-                # if action == 'share':
-                #     return self._share(path)
-                if action == 'rename':
-                    oldname = req.form.get('oldname')
-                    newname = req.form.get('newname')
-                    return self._rename(path, oldname, newname)
-                if action == 'delete':
-                    fname = req.form.get('filename')
-                    return self._delete(path, fname)
-                if action == 'create':
-                    mime = req.form.get('mime')
-                    name = req.form.get('name')
-                    if mime == 'fs/dir':
-                        return self._mkdir(name)
-                    elif mime.startswith('text/'):
-                        e = self.storage.write_text(path, '')
-                        if e:
-                            return self.r400(e)
-                        return flask.redirect(url.my(name) + '?edit')
-                    return self.r400('cannot create file with type ' + mime)
-                if action == 'cut':
-                    name = req.form.get('name').strip()
-                    name = os.path.join(path, name)
-                    e = self.storage.clipboard_cut(name)
-                    if e:
-                        return self.r400(e)
-                    return flask.redirect(url.my(path))
-                if action == 'copy':
-                    name = req.form.get('name')
-                    name = os.path.join(path, name)
-                    e = self.storage.clipboard_copy(name)
-                    if e:
-                        return self.r400(e)
-                    return flask.redirect(url.my(path))
-                if action in ['paste', 'cb_clear']:
-                    into = path if action == 'paste' else None
-                    e = self.storage.clipboard_paste(into, dryrun=False)
-                    if e:
-                        return self.r400(e)
-                    return flask.redirect(url.my(path))
-                if action == 'cb_clear':
-                    e = self.storage.clipboard_clear()
-                    if e:
-                        return self.r400(e)
-                    return flask.redirect(url.my(path))
-
-                return self.r400('unknown action %s' % action)
-
-            if not self.storage.exists(path):
-                return self.r404(path)
-
-            entry = self.storage.file_info(path)
-            if entry.is_dir:
-                play = req.args.get('play')
-                return self._render_dir(path, play=play)
-
-            if 'edit' in req.args:
-                text, e = self.storage.read_text(path)
-                if e:
-                    return self.r400(e)
-                args = {
-                    'js_links': [
-                        url.codemirror('codemirror.min.js'),
-                        url.codemirror('addon/dialog/dialog.min.js')
-                    ],
-                    'css_links': [
-                        url.codemirror('codemirror.min.css'),
-                        url.codemirror('addon/dialog/dialog.min.css')
-                    ],
-                    'codemirror_root': url.codemirror(),
-                    'text': text,
-                    'mimetype': content.guess_mime(path),
-                    'path_prefixes': self._gen_prefixes(path),
-                    'read_only': not entry.can_write
-                }
-                return flask.render_template('edit.htm', **args)
-            if 'see' in req.args:
-                mimetype = content.guess_mime(path)
-                args = {
-                    'frame_url': url.my(path),
-                    'path_prefixes': self._gen_prefixes(path)
-                }
-                tmpl = 'frame.htm'
-                if mimetype.startswith('video/'):
-                    tmpl = 'media.htm'
-                return flask.render_template(tmpl, **args)
-            if 'dl' in req.args:
-                # TODO: for large files, redirect to nginx-served address
-                # TODO: hide _fullpath(), figure out a generic way of serving
-                dlpath = self.storage._fullpath(path)
-                headers = {'Content-Type': 'application/octet-stream'}
-                return flask.send_file(dlpath), 200, headers
-
-            # TODO: hide _fullpath()
-            dlpath = self.storage._fullpath(path)
-            return flask.send_file(dlpath)
-
-        @app.route(url.join(url._res, '<path:path>'))
-        def static_handler(path):
-            fname = os.path.join(app.static_dir, path)
-            if not os.path.exists(fname):
-                return self.r404(path)
-
-            # print('Serving %s' % fname)
-            return flask.send_file(fname)
-
-        @app.route(url.join(url._pub, '<path:path>'))
-        def pub_handler(path):
-            fname = secure_filename(path)
-            fname = os.path.join(app.share_dir, fname)
-            if not os.path.exists(fname):
-                return self.r404(path)
-
-            # print('Serving %s' % fname)
-            return flask.send_file(fname)
+        #     # print('Serving %s' % fname)
+        #     return flask.send_file(fname)
 
         self.app = app
+
+    def _path_get(self, req, path):
+        if not self.storage.exists(path):
+            return self.r404(path)
+
+        entry = self.storage.file_info(path)
+        if entry.is_dir:
+            play = req.args.get('play')
+            return self._render_dir(path, play=play)
+
+        if 'edit' in req.args:
+            text, e = self.storage.read_text(path)
+            if e:
+                return self.r400(e)
+            args = {
+                'js_links': [
+                    url.codemirror('codemirror.min.js'),
+                    url.codemirror('addon/dialog/dialog.min.js')
+                ],
+                'css_links': [
+                    url.codemirror('codemirror.min.css'),
+                    url.codemirror('addon/dialog/dialog.min.css')
+                ],
+                'codemirror_root': url.codemirror(),
+                'text': text,
+                'mimetype': content.guess_mime(path),
+                'path_prefixes': self._gen_prefixes(path),
+                'read_only': not entry.can_write
+            }
+            return flask.render_template('edit.htm', **args)
+        if 'see' in req.args:
+            mimetype = content.guess_mime(path)
+            args = {
+                'frame_url': url.my(path),
+                'path_prefixes': self._gen_prefixes(path)
+            }
+            tmpl = 'frame.htm'
+            if mimetype.startswith('video/'):
+                tmpl = 'media.htm'
+            return flask.render_template(tmpl, **args)
+        if 'dl' in req.args:
+            # TODO: for large files, redirect to nginx-served address
+            # TODO: hide _fullpath(), figure out a generic way of serving
+            dlpath = self.storage._fullpath(path)
+            headers = {'Content-Type': 'application/octet-stream'}
+            return flask.send_file(dlpath), 200, headers
+
+        # TODO: hide _fullpath()
+        dlpath = self.storage._fullpath(path)
+        return flask.send_file(dlpath)
+
+    def _path_post(self, req, path):
+        if 'update' in req.args:
+            print('update request for %s:' % path)
+            print(req.data)
+            print('------------------------------')
+            e = self.storage.write_text(path, req.data)
+            if e:
+                return flask.Response(str(e)), 400
+            return flask.Response("saved"), 200
+
+        print(req.form)
+        action = req.form['action']
+        if action == 'upload':
+            if 'file' not in req.files:
+                return self.r400('no file in POST')
+
+            return self._upload(req, path)
+        # if action == 'share':
+        #     return self._share(path)
+        if action == 'rename':
+            oldname = req.form.get('oldname')
+            newname = req.form.get('newname')
+            return self._rename(path, oldname, newname)
+        if action == 'delete':
+            fname = req.form.get('filename')
+            return self._delete(path, fname)
+        if action == 'create':
+            mime = req.form.get('mime')
+            name = req.form.get('name')
+            if mime == 'fs/dir':
+                return self._mkdir(name)
+            elif mime.startswith('text/'):
+                e = self.storage.write_text(path, '')
+                if e:
+                    return self.r400(e)
+                return flask.redirect(url.my(name) + '?edit')
+            return self.r400('cannot create file with type ' + mime)
+        if action == 'cut':
+            name = req.form.get('name').strip()
+            name = os.path.join(path, name)
+            e = self.storage.clipboard_cut(name)
+            if e:
+                return self.r400(e)
+            return flask.redirect(url.my(path))
+        if action == 'copy':
+            name = req.form.get('name')
+            name = os.path.join(path, name)
+            e = self.storage.clipboard_copy(name)
+            if e:
+                return self.r400(e)
+            return flask.redirect(url.my(path))
+        if action in ['paste', 'cb_clear']:
+            into = path if action == 'paste' else None
+            e = self.storage.clipboard_paste(into, dryrun=False)
+            if e:
+                return self.r400(e)
+            return flask.redirect(url.my(path))
+        if action == 'cb_clear':
+            e = self.storage.clipboard_clear()
+            if e:
+                return self.r400(e)
+            return flask.redirect(url.my(path))
+
+        return self.r400('unknown action %s' % action)
 
     def run(self):
         self.app.run(host=self.conf['host'], port=self.conf['port'])
@@ -335,6 +349,17 @@ class DohApp:
         except OSError as e:
             return flask.render_template('500.htm', e=e), 500
 
+    def _mktemp(self, fname=None):
+        tmp_dir = os.path.join(self.app.data_dir, 'tmp')
+        if not os.path.exists(tmp_dir):
+            os.mkdir(tmp_dir)
+        _id = str(uuid.uuid1())
+        if fname:
+            fname = _id + '.' + secure_filename(fname)
+        else:
+            fname = _id
+        return os.path.join(tmp_dir, fname)
+
     def _upload(self, req, path):
         redir_url = url.my(path)
 
@@ -342,16 +367,18 @@ class DohApp:
         if not f.filename:
             return flask.redirect(redir_url)
 
-        # TODO: secure_filename is too secure
-        # TODO: hide _fullpath(), use a kind of temporary upload_path
-        fpath = self.storage._fullpath(path, secure_filename(f.filename))
-        print('Saving file as %s ...' % fpath)
+        tmppath = self._mktemp(f.filename)
+        exc = None
         try:
-            f.save(fpath)
-            print('Success, redirecting back to %s' % redir_url)
-            return flask.redirect(redir_url)
-        except OSError as e:
-            return self.r500(e)
+            print('Saving file as %s ...' % tmppath)
+            f.save(tmppath)
+            exc = self.storage.move_from_fpath(tmppath, path, f.filename)
+        except (OSError, IOError, ValueError) as e:
+            exc = e
+
+        if exc:
+            return self.r500(exc)
+        return flask.redirect(redir_url)
 
     def _rename(self, path, oldname, newname):
         print("mv %s/%s %s/%s" % (path, oldname, path, newname))
