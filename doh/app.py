@@ -4,6 +4,7 @@ import os
 import time
 import uuid
 from base64 import decodestring as b64decode
+from collections import namedtuple
 
 import flask
 from flask import Flask
@@ -32,7 +33,10 @@ def default_conf(appdir):
         'storage_dir': os.path.join(appdir, 'storage'),
         'static_dir': os.path.join(appdir, 'static'),
         'data_dir': os.path.join(appdir, 'data'),
-        # 'share_dir': os.path.join(appdir, 'share'),
+
+        # used to offload large static files to a static server (nginx):
+        'offload_dir': None,
+        'offload_path': None,
 
         'template_dir': '../templates'
     }
@@ -54,6 +58,13 @@ class DohApp:
         app.static_dir = conf['static_dir']
         app.data_dir = conf['data_dir']
         # app.share_dir = conf['share_dir']
+
+        app.offload = None
+        offload_dir = conf.get('offload_dir')
+        offload_path = conf.get('offload_path')
+        if offload_dir and offload_path:
+            Offload = namedtuple('Offload', ['path', 'dir', 'minsize'])
+            app.offload = Offload(offload_dir, offload_path, 1024 * 1024)
 
         # monkey-patch the environment to handle 'X-Forwarded-For'
         # 'X-Forwarded-Proto', etc:
@@ -153,16 +164,8 @@ class DohApp:
             if mimetype.startswith('video/'):
                 tmpl = 'media.htm'
             return flask.render_template(tmpl, **args)
-        if 'dl' in req.args:
-            # TODO: for large files, redirect to nginx-served address
-            # TODO: hide _fullpath(), figure out a generic way of serving
-            dlpath = self.storage._fullpath(path)
-            headers = {'Content-Type': 'application/octet-stream'}
-            return flask.send_file(dlpath), 200, headers
 
-        # TODO: hide _fullpath()
-        dlpath = self.storage._fullpath(path)
-        return flask.send_file(dlpath)
+        return self._download(path, octetstream=('dl' in req.args))
 
     def _path_post(self, req, path):
         if 'update' in req.args:
@@ -379,6 +382,24 @@ class DohApp:
         if exc:
             return self.r500(exc)
         return flask.redirect(redir_url)
+
+    def _download(self, path, octetstream=False):
+        if self.app.offload:
+            u, e = self.storage.static_download(path, self.app.offload)
+            if e:
+                return self.r500(e)
+            print('Redirecting static download: %s' % u)
+            return flask.redirect(u)
+
+        # TODO: hide _fullpath(), figure out a generic way of serving
+        dlpath = self.storage._fullpath(path)
+
+        if octetstream:
+            headers = {'Content-Type': 'application/octet-stream'}
+        if headers:
+            return flask.send_file(dlpath), 200, headers
+        else:
+            return flask.send_file(dlpath), 200
 
     def _rename(self, path, oldname, newname):
         print("mv %s/%s %s/%s" % (path, oldname, path, newname))

@@ -6,6 +6,7 @@ import errno
 import shutil
 
 import doh.content as content
+import doh.url as url
 
 
 class LocalStorage:
@@ -53,10 +54,10 @@ class LocalStorage:
             dst = self._fullpath(path, name)
             # just a security precaution:
             if not dst.startswith(self._fullpath()):
-                print('dst=%s, fullpath=%s' % (dst, self._fullpath()))
+                self._log('dst=%s, fullpath=%s' % (dst, self._fullpath()))
                 return ValueError('does not start with self._fullpath()')
 
-            print('mv %s -> %s' % (fpath, dst))
+            self._log('mv %s -> %s' % (fpath, dst))
             shutil.move(fpath, dst)
         except (OSError, IOError) as e:
             return e
@@ -233,3 +234,22 @@ class LocalStorage:
             dryrun or os.remove(cb_db)
         except Exception as e:
             self._log("tried to remove %s, failed: %s" % (cb_db, e))
+
+    def static_download(self, path, offload):
+        entry = self.file_info(path)
+        if entry.size < offload.minsize:
+            return None
+
+        fname = os.path.basename(path)
+        tmp_id = str(uuid.uuid1())
+        tmp_dir = os.path.join(offload.dir, tmp_id)
+        tmp_url = url.join(offload.path, tmp_id, fname)
+        fpath = self._fullpath(path)
+        tmp_path = os.path.join(tmp_dir, fname)
+        self._log('static_download: ln %s %s' % (fpath, tmp_path))
+        try:
+            os.mkdir(tmp_dir)
+            os.link(fpath, tmp_path)
+            return (tmp_url, None)
+        except (OSError, IOError) as e:
+            return (None, e)
