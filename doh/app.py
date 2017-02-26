@@ -63,7 +63,7 @@ class DohApp:
         offload_dir = conf.get('offload_dir')
         offload_path = conf.get('offload_path')
         if offload_dir and offload_path:
-            Offload = namedtuple('Offload', ['path', 'dir', 'minsize'])
+            Offload = namedtuple('Offload', ['dir', 'path', 'minsize'])
             app.offload = Offload(offload_dir, offload_path, 1024 * 1024)
 
         # monkey-patch the environment to handle 'X-Forwarded-For'
@@ -388,12 +388,13 @@ class DohApp:
             u, e = self.storage.static_download(path, self.app.offload)
             if e:
                 return self.r500(e)
-            print('Redirecting static download: %s' % u)
+            print('Redirecting to static: %s' % u)
             return flask.redirect(u)
 
         # TODO: hide _fullpath(), figure out a generic way of serving
         dlpath = self.storage._fullpath(path)
 
+        headers = None
         if octetstream:
             headers = {'Content-Type': 'application/octet-stream'}
         if headers:

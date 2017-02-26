@@ -246,7 +246,7 @@ class LocalStorage:
         tmp_url = url.join(offload.path, tmp_id, fname)
         fpath = self._fullpath(path)
         tmp_path = os.path.join(tmp_dir, fname)
-        self._log('static_download: ln %s %s' % (fpath, tmp_path))
+        # self._log('static_download: ln %s %s' % (fpath, tmp_path))
         try:
             os.mkdir(tmp_dir)
             os.link(fpath, tmp_path)
