@@ -238,7 +238,7 @@ class LocalStorage:
     def static_download(self, path, offload):
         entry = self.file_info(path)
         if entry.size < offload.minsize:
-            return None
+            return (None, None)
 
         fname = os.path.basename(path)
         tmp_id = str(uuid.uuid1())
