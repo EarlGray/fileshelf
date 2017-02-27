@@ -165,7 +165,8 @@ class DohApp:
                 tmpl = 'media.htm'
             return flask.render_template(tmpl, **args)
 
-        return self._download(path, octetstream=('dl' in req.args))
+        print(req.args)
+        return self._download(path, octetstream=('dl' in req.args.itervalues()))
 
     def _path_post(self, req, path):
         if 'update' in req.args:
@@ -388,8 +389,9 @@ class DohApp:
             u, e = self.storage.static_download(path, self.app.offload)
             if e:
                 return self.r500(e)
-            print('Redirecting to static: %s' % u)
-            return flask.redirect(u)
+            if u:
+                print('Redirecting to static: %s' % u)
+                return flask.redirect(u)
 
         # TODO: hide _fullpath(), figure out a generic way of serving
         dlpath = self.storage._fullpath(path)
