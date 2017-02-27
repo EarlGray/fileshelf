@@ -8,10 +8,32 @@ a, a:visited {
   padding: 0 2em;
 }
 #addressbar { margin: 0; padding: 0.6em 0 0.2em 0; font-size: 1.6em; }
-#toolbar { float: right; margin: 0.8em 2em 0.2em 0; }
 .no-such { color: red; top: 0; }
-.hoverable { display: none }
+.hoverable,.hidden { display: none }
 .inline { display: inline-block; }
 .centered { margin: 0 auto; display: block; }
 .pull-right { text-align: right; }
 .small { font-size: 80%; }
+
+/* toolbar */
+#toolbar {
+  float: right;
+  margin: 0.8em 2em 0.2em 0;
+}
+.tb-btn {
+  font-family: sans-serif;
+  font-size: 11pt;
+
+  border-radius: 0.4em;
+  border: 2px solid blue;
+  padding: 0.2em 0.4em 0.1em 0.4em;
+
+  background-color: blue;
+  color: white;
+  cursor: pointer;
+}
+.tb-btn:disabled {
+  border: 2px solid grey;
+  background-color: white;
+  color: #aaa;
+}

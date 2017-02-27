@@ -141,7 +141,9 @@ class DohApp:
             args = {
                 'js_links': [
                     url.codemirror('codemirror.min.js'),
-                    url.codemirror('addon/dialog/dialog.min.js')
+                    url.codemirror('addon/dialog/dialog.min.js'),
+                    url.codemirror('addon/search/search.min.js'),
+                    url.codemirror('addon/search/searchcursor.min.js')
                 ],
                 'css_links': [
                     url.codemirror('codemirror.min.css'),

@@ -20,20 +20,7 @@
 .CodeMirror {
   border: 1px solid #888;
 }
-#save-btn {
-  font-size: 12pt;
-  border-radius: 0.4em;
 
-  border: none;
-  background-color: blue;
-  border: 2px solid blue;
-  color: white;
-}
-#save-btn:disabled {
-  border: 2px solid grey;
-  background-color: white;
-  color: #aaa;
-}
 .save-btn-failed {
   background-color: red;
   border: 2px solid red;
@@ -49,12 +36,18 @@
 
 {% block toolbar %}
 <span id="editor-commands">
-  <button id="save-btn" disabled>Save</button>
+  {#<button id="view-btn" class="tb-btn" disabled>View</button>#}
+  <button id="save-btn" class="tb-btn" disabled>Save</button>
+  <label id="settings-lbl" for="settings-btn" class="tb-btn">Settings</label>
 </span>
+{% endblock %}
+
+{% block body %}
 <details id="settings-container">
-  <summary>Settings</summary>
+  <summary id="settings-summary">
+    <button id="settings-btn" class="hidden">Settings</button>
+  </summary>
   <div id="editor-settings">
-    <hr>
     <p>
     <label for="editor-keymap">Keymap:</label>
     <select id="editor-keymap">
@@ -68,7 +61,7 @@
     <select id="editor-mode">
       <option value="" selected>Select mode...</option>
       <!--option value="apl">APL</option-->
-      <option value="clike" data-fext="c,cc,cpp,java">C-like</option>
+      <option value="clike" data-fext="c,cc,cpp,java,scala">C-like</option>
       <option value="css" data-fext="css" data-mime="text/css">CSS</option>
       <option value="diff" data-fext="diff,patch">Diff</option>
       <option value="erlang" data-fext="erl">Erlang</option>
@@ -143,9 +136,6 @@
 
   </div>
 </details>
-{% endblock %}
-
-{% block body %}
 <textarea id="text-editor" cols="90" rows="150"
     spellcheck="false" autofocus>{{ text }}</textarea>
 <script>
@@ -223,6 +213,35 @@ var setupVim = function () {
 
   /* key mappings */
   CodeMirror.Vim.map(';', ':', 'normal');
+
+  /* options */
+  var checkWrapLines = document.querySelector('input#editor-wrap-lines');
+  CodeMirror.Vim.defineOption('wrap', checkWrapLines.checked, 'boolean', [],
+    function (val, arg) {
+      console.log(arg);
+      if (val === undefined)
+        return checkWrapLines.checked;
+
+      checkWrapLines.checked = val;
+      checkWrapLines.onchange();
+    });
+
+  var checkLineNums = document.querySelector('input#editor-line-numbers');
+  CodeMirror.Vim.defineOption('number', checkLineNums.checked, 'boolean', [],
+    function (val) {
+      if (val === undefined)
+        return checkLineNums.checked;
+
+      checkLineNums.checked = val;
+      checkLineNums.onchange();
+    });
+
+  var selectFontFamily = document.querySelector('select#editor-font');
+  CodeMirror.Vim.defineOption('font', selectFontFamily.selectedOptions[0],
+    'string', [], function (val) {
+      if (val === undefined)
+        return selectFontFamily.selectedOptions[0].value;
+    });
 };
 
 window.onload = function () {
@@ -302,7 +321,7 @@ window.onload = function () {
   selectKeymap.onchange();
 
   /* font */
-  selectFontFamily = document.querySelector('select#editor-font');
+  var selectFontFamily = document.querySelector('select#editor-font');
   selectFontFamily.onchange = function () {
     var opt = selectFontFamily.selectedOptions[0];
     var val = opt.value;
@@ -352,6 +371,11 @@ window.onload = function () {
   the_editor.on('change', function () {
     saveButton.disabled = the_editor.isClean();
   });
+
+  /* settings  */
+  var settingsButton = document.querySelector('#settings-btn');
+  var settingsTrig = document.querySelector('#settings-summary');
+  settingsButton.onclick = function () { settingsTrig.click(); return false; };
 
   /* TODO: saving settings into cookies */
 };
