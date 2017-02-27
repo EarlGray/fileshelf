@@ -108,10 +108,11 @@
     {# <th>access &nbsp;</th> -#}
     <th>action &nbsp;</th>
   </tr>
-  {% for entry in lsdir -%}
+  {% for entry in lsdir %}
   <tr class="entry-row"
       {% if entry.is_hidden -%}data-hidden {% endif -%}
-      data-ctime="{{ entry.ctime }}">
+      data-ctime="{{ entry.ctime }}"
+      data-mime="{{ entry.mime }}">
     <td class="entry-icon">
       <a class="{{ entry.icon_src }} block icon" href="{{ entry.href + '?dl' }}"></a>
     </td>
@@ -127,9 +128,6 @@
       <a href="{{ entry.see_url }}">{{ entry.name }}</a>
       {% else -%}
       <a href="{{ entry.href }}">{{ entry.name }}</a>
-      {% endif -%}
-      {% if entry.play -%}
-      <br><audio src="{{ entry.href }}" autoplay="true" controls>No sound :(</audio>
       {% endif -%}
     </td>
     {# <td class="entry-type">{{ entry.mime }}</td> -#}
@@ -169,6 +167,31 @@
       </form>
     </td>
   </tr>
+  {% if entry.play -%}
+  <tr class="entry-play">
+    <td class="entry-icon"></td>
+    <td class="entry-name">
+      <audio id="play-audio" src="{{ entry.href }}" autoplay="true" controls>No sound :(</audio>
+    </td>
+    <td class="entry-ctime"></td>
+  </tr>
+  <script>
+    var tr = document.querySelector('tr.entry-play');
+    var player = tr.querySelector('audio');
+    player.onended = function () {
+      while (true) {
+        tr = tr.nextElementSibling;
+        if (!tr)
+          break;
+        var mime = tr.getAttribute('data-mime');
+        if (mime && mime.startsWith('audio/')) {
+          window.location = tr.querySelector('.entry-name a').href;
+          break;
+        }
+      }
+    };
+  </script>
+  {% endif -%}
   {% endfor -%}
 </table>
 <hr/>
@@ -225,23 +248,28 @@ document.body.onkeydown = function (e) {
   } else {
     switch (e.which) {
     case 38: /* up */
-      if (focused)
-        newFocused = focused.previousElementSibling;
-      else
+      if (focused) {
+        newFocused = focused;
+        do { /* skip rows without "entry-name" */
+            newFocused = newFocused.previousElementSibling;
+        } while (newFocused && !(newFocused.querySelector('.entry-name a')));
+      } else
         newFocused = document.querySelectorAll('.entry-row:last-child');
       break;
     case 40: /* down */
-      if (focused)
-        newFocused = focused.nextElementSibling;
-      else
+      if (focused) {
+        newFocused = focused;
+        do { /* skip rows without "entry-name" */
+          newFocused = newFocused.nextElementSibling;
+        } while (newFocused && !(newFocused.querySelector('.entry-name a')));
+      } else
         newFocused = document.querySelectorAll('.entry-row')[0];
       break;
     default:
       console.log(e.which + ' is down');
     }
   }
-  if (newFocused && !(newFocused.querySelector('.entry-name a')))
-    newFocused = undefined;
+  /* focus next */
   if (newFocused) {
     if (focused)
       focused.classList.remove('focused');
