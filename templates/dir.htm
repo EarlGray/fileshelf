@@ -23,6 +23,10 @@
 .entry-row:hover .hoverable {
   display: inline-block;
 }
+.entry-name > a:focus {
+  outline: 0;
+}
+
 .entry-size {
   padding-left: 1em;
   font-size: 90%;
@@ -53,14 +57,14 @@
 
 {% block body %}
 {% if clipboard %}
-<details style="display: inline-block; padding-left: 0.2em;">
+<details id="clipboard-container" class="inline" style="padding-left: 0.2em;">
   <summary>
     clipboard
     <form class="inline" method="POST">
       <input type="hidden" name="action" value="cb_clear">
       <input type="submit" name="clear" value="clear">
     </form>
-    <form class="inline" method="POST">
+    <form id="cb-paste-form" class="inline" method="POST">
       <input type="hidden" name="action" value="paste">
       <input type="submit" name="paste" value="paste">
     </form>
@@ -143,12 +147,12 @@
       {% endif -%}
     </td> -#}
     <td class="entry-action">
-      <form class="hoverable" method="POST">
+      <form data-do="copy" class="hoverable" method="POST">
         <input type="hidden" name="action" value="copy">
         <input type="hidden" name="name" value="{{ entry.name }}">
         <input type="submit" name="copy" value="copy">
       </form>
-      <form class="hoverable" method="POST">
+      <form data-do="cut" class="hoverable" method="POST">
         <input type="hidden" name="action" value="cut">
         <input type="hidden" name="name" value="{{ entry.name }}">
         <input type="submit" name="cut" value="cut">
@@ -158,7 +162,7 @@
         <input type="button" value="rename">
       </a>
       {% endif -%}
-      <form class="hoverable" action="" method="POST">
+      <form data-do="delete" class="hoverable" action="" method="POST">
         <input type="hidden" name="action" value="delete">
         <input type="hidden" name="filename" value="{{ entry.name }}">
         <input type="submit" name="delete" value="delete">
@@ -182,5 +186,69 @@ tr[data-hidden] { opacity: 0.55; }
 .dir-icon { background-image: url("data:image/png;base64,{% include "res/dir.png.base64" -%}"); }
 .file-icon { background-image: url("data:image/gif;base64,{% include "res/file.gif.base64" -%}"); }
 .dl-icon { background-image: url("data:image/svg+xml;base64,{% include "res/dl.svg.base64" %}"); }
+.focused { background-color: #e8eeff; }
 </style>
+<script>
+var macKbd = (navigator.userAgent.indexOf('Macintosh') >= 0);
+window.focused = undefined;
+document.body.onkeydown = function (e) {
+  var newFocused;
+  if (e.shiftKey || e.ctrlKey || e.altKey || e.metaKey) {
+    if (macKbd ? e.metaKey : e.ctrlKey) {
+      switch (e.key) {
+        case 'c':
+          focused.querySelector('form[data-do="copy"]').submit();
+          break;
+        case 'x':
+          focused.querySelector('form[data-do="cut"]').submit();
+          break;
+        case 'v':
+          document.querySelector('form#cb-paste-form').submit();
+          break;
+      }
+    }
+    if (macKbd ? e.metaKey : e.altKey) {
+      switch (e.which) {
+      case 38: /* up */
+        var path = location.pathname.split('/');
+        if (path.length > 2) {
+          path.pop();
+          window.location = path.join('/');
+        }
+        break;
+      case 40: /* down */
+        var path = focused.querySelector('.entry-name a').href;
+        window.location = path;
+        break;
+      }
+    }
+  } else {
+    switch (e.which) {
+    case 38: /* up */
+      if (focused)
+        newFocused = focused.previousElementSibling;
+      else
+        newFocused = document.querySelectorAll('.entry-row:last-child');
+      break;
+    case 40: /* down */
+      if (focused)
+        newFocused = focused.nextElementSibling;
+      else
+        newFocused = document.querySelectorAll('.entry-row')[0];
+      break;
+    default:
+      console.log(e.which + ' is down');
+    }
+  }
+  if (newFocused && !(newFocused.querySelector('.entry-name a')))
+    newFocused = undefined;
+  if (newFocused) {
+    if (focused)
+      focused.classList.remove('focused');
+    newFocused.classList.add('focused');
+    newFocused.querySelector('.entry-name a').focus();
+    focused = newFocused;
+  }
+};
+</script>
 {% endblock %}
