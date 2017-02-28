@@ -249,7 +249,7 @@ class LocalStorage:
         # self._log('static_download: ln %s %s' % (fpath, tmp_path))
         try:
             os.mkdir(tmp_dir)
-            os.link(fpath, tmp_path)
+            os.symlink(fpath, tmp_path)
             return (tmp_url, None)
         except (OSError, IOError) as e:
             return (None, e)
