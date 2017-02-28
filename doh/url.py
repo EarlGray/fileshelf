@@ -35,6 +35,8 @@ def prefixes(exists, path):
     res = []
     pre = ''
     for d in path.split('/'):
+        if not d:
+            continue
         pre = os.path.join(pre, d)
 
         if exists(pre):
