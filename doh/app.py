@@ -168,7 +168,8 @@ class DohApp:
             return flask.render_template(tmpl, **args)
 
         print(req.args)
-        return self._download(path, octetstream=('dl' in req.args.itervalues()))
+        is_dl = 'dl' in req.args.itervalues()
+        return self._download(path, octetstream=is_dl)
 
     def _path_post(self, req, path):
         if 'update' in req.args:
@@ -238,8 +239,16 @@ class DohApp:
     def run(self):
         self.app.run(host=self.conf['host'], port=self.conf['port'])
 
-    def _gen_prefixes(self, path):
-        return url.prefixes(self.storage.exists, path)
+    def _gen_prefixes(self, path, tabindex=1):
+        ps = url.prefixes(self.storage.exists, path)
+        ret = []
+        for i, p in enumerate(ps):
+            ret.append({
+                'name': p[0],
+                'href': p[1],
+                'tabindex': tabindex + i
+            })
+        return ret
 
     def file_info(self, path):
         entry = self.storage.file_info(path)
@@ -297,6 +306,10 @@ class DohApp:
         return flask.render_template('500.htm', **args), 500
 
     def _render_dir(self, path, play=None):
+        tabindex = 2
+        addressbar = self._gen_prefixes(path, tabindex)
+        tabindex += len(addressbar)
+
         lsdir = []
         try:
             for fname in self.storage.list_dir(path):
@@ -342,14 +355,18 @@ class DohApp:
                 clipboard.append(e)
 
             lsdir = sorted(lsdir, key=lambda d: (not d['isdir'], d['name']))
+            for entry in lsdir:
+                entry['tabindex'] = tabindex
+                tabindex += 1
 
             templvars = {
                 'path': path,
                 'lsdir': lsdir,
                 'title': path,
-                'path_prefixes': self._gen_prefixes(path),
+                'path_prefixes': addressbar,
                 'rename': flask.request.args.get('rename'),
-                'clipboard': clipboard
+                'clipboard': clipboard,
+                'upload_tabidx': tabindex,
             }
             return flask.render_template('dir.htm', **templvars)
         except OSError as e:

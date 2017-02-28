@@ -22,11 +22,12 @@
 <div id="page" class="centered">
   <div id="header">
     <h1 id="addressbar" class="inline">
-      <a href="{{ url_for('path_handler') }}">FS:</a>
-      {% for prefix, href in path_prefixes -%}
-      {% if href -%} / <a href="{{ href }}">{{ prefix }}</a>
+      <a href="{{ url_for('path_handler') }}" class="dir-link" tabindex="1">FS:</a>
+      {% for pre in path_prefixes -%}
+      {% if pre.href -%}
+      / <a href="{{ pre.href }}" class="dir-link" tabindex="{{ pre.tabindex }}">{{ pre.name }}</a>
       {% else -%}
-      / <span class="no-such">{{ prefix }}</span>
+      / <span class="no-such">{{ pre.name }}</span>
       {% endif -%}
       {% endfor -%}
     </h1>

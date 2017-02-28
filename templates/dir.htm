@@ -24,7 +24,7 @@
   display: inline-block;
 }
 .entry-name > a:focus {
-  outline: 0;
+  /*outline: 0;*/
 }
 
 .entry-size {
@@ -112,7 +112,7 @@
   <tr class="entry-row"
       {% if entry.is_hidden -%}data-hidden {% endif -%}
       data-ctime="{{ entry.ctime }}"
-      data-mime="{{ entry.mime }}">
+      {% if entry.mime -%}data-mime="{{ entry.mime }}"{% endif -%}>
     <td class="entry-icon">
       <a class="{{ entry.icon_src }} block icon" href="{{ entry.href + '?dl' }}"></a>
     </td>
@@ -125,9 +125,13 @@
         <input type="submit" value="rename">
       </form>
       {% elif entry.see_url -%}
-      <a href="{{ entry.see_url }}">{{ entry.name }}</a>
+      <a href="{{ entry.see_url }}" class="file-link" tabindex="{{ entry.tabindex }}">
+        {{ entry.name }}
+      </a>
       {% else -%}
-      <a href="{{ entry.href }}">{{ entry.name }}</a>
+      <a href="{{ entry.href }}" class="file-link" tabindex="{{ entry.tabindex }}">
+        {{ entry.name }}
+      </a>
       {% endif -%}
     </td>
     {# <td class="entry-type">{{ entry.mime }}</td> -#}
@@ -185,7 +189,7 @@
           break;
         var mime = tr.getAttribute('data-mime');
         if (mime && mime.startsWith('audio/')) {
-          window.location = tr.querySelector('.entry-name a').href;
+          window.location = tr.querySelector('.file-link').href;
           break;
         }
       }
@@ -197,8 +201,8 @@
 <hr/>
 <form action="" method="POST" enctype="multipart/form-data">
   <input type="hidden" name="action" value="upload">
-  <input type="file" name="file"/>
-  <input type="submit" name="upload" value="Upload"/>
+  <input type="file" name="file" tabindex="{{ upload_tabidx }}"/>
+  <input type="submit" name="upload" value="Upload" tabindex="{{ upload_tabidx + 1 }}"/>
 </form>
 {# after the main content is shown: -#}
 <style id="dir-css">
@@ -212,8 +216,30 @@ tr[data-hidden] { opacity: 0.55; }
 .focused { background-color: #e8eeff; }
 </style>
 <script>
-var macKbd = (navigator.userAgent.indexOf('Macintosh') >= 0);
 window.focused = undefined;
+window.onfocus = function () {
+  if (window.focused)
+    focused.querySelector('.file-link').focus();
+};
+
+var macKbd = (navigator.userAgent.indexOf('Macintosh') >= 0);
+
+var filelinks = document.querySelectorAll('.file-link');
+for (var i = 0; i < filelinks.length; ++i) {
+  var filelink = filelinks[i];
+  filelink.onfocus = function () {
+    window.focused = this.parentElement.parentElement;
+    window.focused.classList.add('focused');
+  };
+  filelink.onblur = function () {
+    var tr = this.parentElement.parentElement;
+    tr.classList.remove('focused');
+  }
+}
+var nooutline = document.createElement('style');
+nooutline.innerText = '.entry-name > a:focus { outline: 0 }';
+document.head.appendChild(nooutline);
+
 document.body.onkeydown = function (e) {
   var newFocused;
   if (e.shiftKey || e.ctrlKey || e.altKey || e.metaKey) {
@@ -231,32 +257,32 @@ document.body.onkeydown = function (e) {
       }
     }
     if (macKbd ? e.metaKey : e.altKey) {
-      switch (e.which) {
-      case 38: /* up */
+      switch (e.key) {
+      case 'ArrowUp':
         var path = location.pathname.split('/');
         if (path.length > 2) {
           path.pop();
           window.location = path.join('/');
         }
         break;
-      case 40: /* down */
-        var path = focused.querySelector('.entry-name a').href;
+      case 'ArrowDown':
+        var path = focused.querySelector('.file-link').href;
         window.location = path;
         break;
       }
     }
   } else {
-    switch (e.which) {
-    case 38: /* up */
+    switch (e.key) {
+    case 'ArrowUp':
       if (focused) {
         newFocused = focused;
         do { /* skip rows without "entry-name" */
             newFocused = newFocused.previousElementSibling;
-        } while (newFocused && !(newFocused.querySelector('.entry-name a')));
+        } while (newFocused && !(newFocused.querySelector('.file-link')));
       } else
         newFocused = document.querySelectorAll('.entry-row:last-child');
       break;
-    case 40: /* down */
+    case 'ArrowDown':
       if (focused) {
         newFocused = focused;
         do { /* skip rows without "entry-name" */
@@ -265,16 +291,19 @@ document.body.onkeydown = function (e) {
       } else
         newFocused = document.querySelectorAll('.entry-row')[0];
       break;
+    case 'Home':
+      newFocused = document.querySelector('.entry-row');
+      break;
+    case 'End':
+      newFocused = document.querySelector('.entry-row:last-child');
+      break;
     default:
-      console.log(e.which + ' is down');
+      console.log(e.key + ' is down');
     }
   }
   /* focus next */
   if (newFocused) {
-    if (focused)
-      focused.classList.remove('focused');
-    newFocused.classList.add('focused');
-    newFocused.querySelector('.entry-name a').focus();
+    newFocused.querySelector('.file-link').focus();
     focused = newFocused;
   }
 };
