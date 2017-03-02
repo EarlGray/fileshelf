@@ -18,7 +18,7 @@
   padding: 0.3em 0;
 }
 .entry-row:hover {
-  background-color: #f8f8f8;
+  background-color: #f8f8ff;
 }
 .entry-row:hover .hoverable {
   display: inline-block;
@@ -198,6 +198,7 @@
   {% endif -%}
   {% endfor -%}
 </table>
+
 <hr/>
 <form action="" method="POST" enctype="multipart/form-data">
   <input type="hidden" name="action" value="upload">
@@ -224,9 +225,16 @@ window.onfocus = function () {
 
 var macKbd = (navigator.userAgent.indexOf('Macintosh') >= 0);
 
-var filelinks = document.querySelectorAll('.file-link');
-for (var i = 0; i < filelinks.length; ++i) {
-  var filelink = filelinks[i];
+var entries = document.querySelectorAll('.entry-row');
+for (var i = 0; i < entries.length; ++i) {
+  var tr = entries[i];
+  var filelink = tr.querySelector('.file-link');
+  tr.onclick = function () {
+    console.log(this);
+    window.focused = this;
+    this.querySelector('.file-link').focus();
+  };
+
   filelink.onfocus = function () {
     window.focused = this.parentElement.parentElement;
     window.focused.classList.add('focused');
