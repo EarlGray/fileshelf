@@ -7,13 +7,19 @@ a, a:visited {
   max-width: 60em;
   padding: 0 2em;
 }
-#addressbar { margin: 0; padding: 0.6em 0 0.2em 0; font-size: 1.6em; }
+#addressbar {
+  margin: 0;
+  padding: 0.6em 0 0.2em 0;
+  font-size: 1.6em;
+  font-weight: bold;
+}
 .no-such { color: red; top: 0; }
-.hoverable,.hidden { display: none }
+.hidden { display: none }
 .inline { display: inline-block; }
 .centered { margin: 0 auto; display: block; }
 .pull-right { text-align: right; }
 .small { font-size: 80%; }
+.clearfix { overflow: auto; }
 
 /* toolbar */
 #toolbar {

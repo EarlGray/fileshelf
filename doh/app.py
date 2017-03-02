@@ -3,6 +3,7 @@ from __future__ import print_function
 import os
 import time
 import uuid
+import string
 from base64 import decodestring as b64decode
 from collections import namedtuple
 
@@ -182,21 +183,22 @@ class DohApp:
             return flask.Response("saved"), 200
 
         print(req.form)
-        action = req.form['action']
-        if action == 'upload':
-            if 'file' not in req.files:
-                return self.r400('no file in POST')
-
-            return self._upload(req, path)
-        # if action == 'share':
-        #     return self._share(path)
-        if action == 'rename':
+        actions = req.form.getlist('action')
+        if 'rename' in actions:
             oldname = req.form.get('oldname')
             newname = req.form.get('newname')
             return self._rename(path, oldname, newname)
+
+        action = actions[0]
+        if action == 'upload':
+            if 'file' not in req.files:
+                return self.r400('no file in POST')
+            return self._upload(req, path)
+        # if action == 'share':
+        #     return self._share(path)
         if action == 'delete':
-            fname = req.form.get('filename')
-            return self._delete(path, fname)
+            files = req.form.getlist('file')
+            return self._delete(path, files)
         if action == 'create':
             mime = req.form.get('mime')
             name = req.form.get('name')
@@ -209,18 +211,22 @@ class DohApp:
                 return flask.redirect(url.my(name) + '?edit')
             return self.r400('cannot create file with type ' + mime)
         if action == 'cut':
-            name = req.form.get('name').strip()
-            name = os.path.join(path, name)
-            e = self.storage.clipboard_cut(name)
-            if e:
-                return self.r400(e)
+            files = req.form.getlist('file')
+            files = map(string.strip, files)
+            for f in files:
+                name = os.path.join(path, f)
+                e = self.storage.clipboard_cut(name)
+                if e:
+                    return self.r400(e)
             return flask.redirect(url.my(path))
         if action == 'copy':
-            name = req.form.get('name')
-            name = os.path.join(path, name)
-            e = self.storage.clipboard_copy(name)
-            if e:
-                return self.r400(e)
+            files = req.form.getlist('file')
+            files = map(string.strip, files)
+            for f in files:
+                name = os.path.join(path, f)
+                e = self.storage.clipboard_copy(name)
+                if e:
+                    return self.r400(e)
             return flask.redirect(url.my(path))
         if action in ['paste', 'cb_clear']:
             into = path if action == 'paste' else None
@@ -234,7 +240,7 @@ class DohApp:
                 return self.r400(e)
             return flask.redirect(url.my(path))
 
-        return self.r400('unknown action %s' % action)
+        return self.r400('unknown action: %s' % action)
 
     def run(self):
         self.app.run(host=self.conf['host'], port=self.conf['port'])
@@ -298,11 +304,13 @@ class DohApp:
             }
         return flask.render_template('404.htm', **args), 404
 
-    def r500(self, e=None):
+    def r500(self, e=None, path=None):
         args = {
             'title': 'server error',
-            'e': e
+            'e': e,
         }
+        if path:
+            args['path_prefixes'] = self._gen_prefixes(path)
         return flask.render_template('500.htm', **args), 500
 
     def _render_dir(self, path, play=None):
@@ -438,15 +446,19 @@ class DohApp:
         except IOError as e:
             return self.r500(e)
 
-    def _delete(self, path, fname):
-        if os.path.dirname(fname):
-            return self.r400('Expected bare filename: ' + fname)
+    def _delete(self, path, files):
+        if isinstance(files, str):
+            files = [files]
 
-        fpath = os.path.join(path, fname)
-        print("rm %s" % fpath)
-        e = self.storage.delete(fpath)
-        if e:
-            return self.r500(e)
+        for fname in files:
+            if os.path.dirname(fname):
+                return self.r400('Expected bare filename: ' + fname)
+
+            fpath = os.path.join(path, fname)
+            print("rm %s" % fpath)
+            e = self.storage.delete(fpath)
+            if e:
+                return self.r500(e, path=fpath)
         return flask.redirect(url.my(path))
 
     def _mkdir(self, dirname):

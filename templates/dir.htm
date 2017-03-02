@@ -1,6 +1,10 @@
 {% extends "tmpl.htm" %}
 {% block style %}
 <style>
+#dir-entries {
+  position: relative;
+  left: -2em;
+}
 #dir-entries-header {
   border-bottom: 1px solid #aaa;
 }
@@ -11,6 +15,9 @@
 #dir-entries-header th#deh-dl {
   padding: 0;
 }
+#actionbar {
+  margin: 0em 0em 1em 0em;
+}
 
 .entry-row {
   margin-top: 0.2em;
@@ -20,11 +27,28 @@
 .entry-row:hover {
   background-color: #f8f8ff;
 }
-.entry-row:hover .hoverable {
-  display: inline-block;
+.entry-row .hoverable {
+  opacity: 0.1;
 }
-.entry-name > a:focus {
-  /*outline: 0;*/
+.entry-row:hover .hoverable {
+  opacity: 1;
+}
+.entry-select {
+  width: 1.5em;
+  text-align: right;
+}
+.file-select:checked {
+  display: inline-block;
+  color: blue;
+  opacity: 0.5;
+}
+.rename-link {
+  float: right;
+}
+#file-rename {
+  font-size: 10pt;
+  box-shadow: inset 1px 1px 2px 0 #707070;
+  outline: 0;
 }
 
 .entry-size {
@@ -53,6 +77,11 @@
 {% endblock %}
 
 {% block toolbar %}
+{#<label for="do-download" class="tb-btn">Download</label>
+<label for="do-copy" class="tb-btn">Copy</label>
+<label for="do-cut" class="tb-btn">Cut</label>
+<label for="do-delete" class="tb-btn">Delete</label>
+#}
 {% endblock %}
 
 {% block body %}
@@ -98,112 +127,150 @@
 </details>
 <hr>
 {% endif %}
-<table id="dir-entries">
-  <tr id="dir-entries-header">
-    <th id="deh-dl" class="dl-icon icon"> </th>
-    <th>name &nbsp;</th>
-    {# <th>type &nbsp;</th> -#}
-    <th>created &nbsp;</th>
-    <th>size &nbsp;</th>
-    {# <th>access &nbsp;</th> -#}
-    <th>action &nbsp;</th>
-  </tr>
-  {% for entry in lsdir %}
-  <tr class="entry-row"
-      {% if entry.is_hidden -%}data-hidden {% endif -%}
-      data-ctime="{{ entry.ctime }}"
-      {% if entry.mime -%}data-mime="{{ entry.mime }}"{% endif -%}>
-    <td class="entry-icon">
-      <a class="{{ entry.icon_src }} block icon" href="{{ entry.href + '?dl' }}"></a>
-    </td>
-    <td class="entry-name">
-      {% if rename == entry.name -%}
-      <form method="POST">
-        <input type="hidden" name="action" value="rename">
-        <input type="hidden" name="oldname" value="{{ entry.name }}">
-        <input type="text" name="newname" value="{{ entry.name }}" autofocus>
-        <input type="submit" value="rename">
-      </form>
-      {% elif entry.see_url -%}
-      <a href="{{ entry.see_url }}" class="file-link" tabindex="{{ entry.tabindex }}">
-        {{ entry.name }}
-      </a>
-      {% else -%}
-      <a href="{{ entry.href }}" class="file-link" tabindex="{{ entry.tabindex }}">
-        {{ entry.name }}
-      </a>
-      {% endif -%}
-    </td>
-    {# <td class="entry-type">{{ entry.mime }}</td> -#}
-    <td class="entry-ctime" title="{{ entry.full_ctime }}">{{ entry.created_at }}</td>
-    <td class="pull-right entry-size">{{ entry.size }}</td>
-    {# <td class="pull-right entry-access">
-      {% if entry.shared -%}
-      <a class="entry-em" href="{{ entry.shared }}">public</a>
-      {% elif not entry.isdir -%}
-      <form class="hoverable" action="" method="POST">
-        <input type="hidden" name="action" value="share">
-        <input type="hidden" name="file" value="{{ entry.name }}">
-        <input type="submit" name="share" value="share">
-      </form>
-      {% endif -%}
-    </td> -#}
-    <td class="entry-action">
-      <form data-do="copy" class="hoverable" method="POST">
-        <input type="hidden" name="action" value="copy">
-        <input type="hidden" name="name" value="{{ entry.name }}">
-        <input type="submit" name="copy" value="copy">
-      </form>
-      <form data-do="cut" class="hoverable" method="POST">
-        <input type="hidden" name="action" value="cut">
-        <input type="hidden" name="name" value="{{ entry.name }}">
-        <input type="submit" name="cut" value="cut">
-      </form>
-      {% if entry.rename_url -%}
-      <a href="{{ entry.rename_url }}" class="hoverable">
-        <input type="button" value="rename">
-      </a>
-      {% endif -%}
-      <form data-do="delete" class="hoverable" action="" method="POST">
-        <input type="hidden" name="action" value="delete">
-        <input type="hidden" name="filename" value="{{ entry.name }}">
-        <input type="submit" name="delete" value="delete">
-      </form>
-    </td>
-  </tr>
-  {% if entry.play -%}
-  <tr class="entry-play">
-    <td class="entry-icon"></td>
-    <td class="entry-name">
-      <audio id="play-audio" src="{{ entry.href }}" autoplay="true" controls>No sound :(</audio>
-    </td>
-    <td class="entry-ctime"></td>
-  </tr>
-  <script>
-    var tr = document.querySelector('tr.entry-play');
-    var player = tr.querySelector('audio');
-    player.onended = function () {
-      while (true) {
-        tr = tr.nextElementSibling;
-        if (!tr)
-          break;
-        var mime = tr.getAttribute('data-mime');
-        if (mime && mime.startsWith('audio/')) {
-          window.location = tr.querySelector('.file-link').href;
-          break;
+<form id="dir-actions" action="" method="POST">
+  <div id="actionbar" class="clearfix">
+    <button id="do-download" type="submit"
+        name="action" value="download"
+        title="&#8984;-&darr;" class="tb-btn">
+      Download
+    </button>
+    <button id="do-copy" type="submit"
+        name="action" value="copy"
+        title="&#8984;-C" class="tb-btn" >
+      Copy
+    </button>
+    <button id="do-cut" type="submit"
+        name="action" value="cut"
+        title="&#8984;-X" class="tb-btn">
+      Cut
+    </button>
+    <button id="do-delete" type="submit"
+        name="action" value="delete"
+        title="" class="tb-btn">
+      Delete
+    </button>
+    {#<hr/>#}
+  </div>
+  <table id="dir-entries">
+    <tr id="dir-entries-header">
+      <th id="deh-cb"></th>
+      <th id="deh-dl" class="dl-icon icon"> </th>
+      <th>name &nbsp;</th>
+      <th id="deh-ren"></th>
+      {# <th>type &nbsp;</th> -#}
+      <th>created &nbsp;</th>
+      <th>size &nbsp;</th>
+      {# <th>access &nbsp;</th> -#}
+      {# <th>action &nbsp;</th> -#}
+    </tr>
+    {% for entry in lsdir %}
+    <tr class="entry-row"
+        {% if entry.is_hidden -%}data-hidden {% endif -%}
+        {% if entry.mime -%}data-mime="{{ entry.mime }}"{% endif -%}
+        data-ctime="{{ entry.ctime }}"
+        >
+      <td class="entry-select">
+        <input type="checkbox" class="file-select hoverable" name="file" value="{{ entry.name }}"/>
+      </td>
+      <td class="entry-icon">
+        <a class="{{ entry.icon_src }} block icon" href="{{ entry.href + '?dl' }}"></a>
+      </td>
+      <td class="entry-name">
+        {% if rename == entry.name -%}
+        <form method="POST">
+          <input type="hidden" name="action" value="rename">
+          <input type="hidden" name="oldname" value="{{ entry.name }}">
+          <input type="text" id="file-rename" name="newname" value="{{ entry.name }}" autofocus>
+          <input type="submit" value="rename">
+        </form>
+        {% else -%} 
+        {%if entry.see_url -%}
+        <a href="{{ entry.see_url }}" class="file-link" tabindex="{{ entry.tabindex }}">
+          {{ entry.name }}
+        </a>
+        {% else -%}
+        <a href="{{ entry.href }}" class="file-link" tabindex="{{ entry.tabindex }}">
+          {{ entry.name }}
+        </a>
+        {% endif %}
+        {% endif -%}
+      </td>
+      <td class="entry-rename">
+        <a href="{{ entry.rename_url }}" class="hoverable" title="rename">
+          <img src="{{ url_for('static_handler', path='rename.png') }}" width="16" height="16" class=hoverable">
+        </a>
+      </td>
+      {# <td class="entry-type">{{ entry.mime }}</td> -#}
+      <td class="entry-ctime" title="{{ entry.full_ctime }}">{{ entry.created_at }}</td>
+      <td class="pull-right entry-size">{{ entry.size }}</td>
+      {# <td class="pull-right entry-access">
+        {% if entry.shared -%}
+        <a class="entry-em" href="{{ entry.shared }}">public</a>
+        {% elif not entry.isdir -%}
+        <form class="hoverable" action="" method="POST">
+          <input type="hidden" name="action" value="share">
+          <input type="hidden" name="file" value="{{ entry.name }}">
+          <input type="submit" name="share" value="share">
+        </form>
+        {% endif -%}
+      </td>  -#}
+      {#<td class="entry-action">
+        <form data-do="copy" class="hoverable" method="POST">
+          <input type="hidden" name="action" value="copy">
+          <input type="hidden" name="name" value="{{ entry.name }}">
+          <input type="submit" name="copy" value="copy">
+        </form>
+        <form data-do="cut" class="hoverable" method="POST">
+          <input type="hidden" name="action" value="cut">
+          <input type="hidden" name="name" value="{{ entry.name }}">
+          <input type="submit" name="cut" value="cut">
+        </form>
+        {% if entry.rename_url -%}
+        <a href="{{ entry.rename_url }}" class="hoverable">
+          <input type="button" value="rename">
+        </a>
+        {% endif -%}
+        <form data-do="delete" class="hoverable" action="" method="POST">
+          <input type="hidden" name="action" value="delete">
+          <input type="hidden" name="filename" value="{{ entry.name }}">
+          <input type="submit" name="delete" value="delete">
+        </form>
+      </td> -#}
+    </tr>
+    {% if entry.play -%}
+    <tr class="entry-play">
+      <td class="entry-select"></td>
+      <td class="entry-icon"></td>
+      <td class="entry-name">
+        <audio id="play-audio" src="{{ entry.href }}" autoplay="true" controls>No sound :(</audio>
+      </td>
+      <td class="entry-ctime">&#8617;</td>
+    </tr>
+    <script>
+      var tr = document.querySelector('tr.entry-play');
+      var player = tr.querySelector('audio');
+      player.onended = function () {
+        while (true) {
+          tr = tr.nextElementSibling;
+          if (!tr)
+            break;
+          var mime = tr.getAttribute('data-mime');
+          if (mime && mime.startsWith('audio/')) {
+            window.location = tr.querySelector('.file-link').href;
+            break;
+          }
         }
-      }
-    };
-  </script>
-  {% endif -%}
-  {% endfor -%}
-</table>
-
+      };
+    </script>
+    {% endif -%}
+    {% endfor -%}
+  </table>
+</form>
 <hr/>
 <form action="" method="POST" enctype="multipart/form-data">
   <input type="hidden" name="action" value="upload">
-  <input type="file" name="file" tabindex="{{ upload_tabidx }}"/>
-  <input type="submit" name="upload" value="Upload" tabindex="{{ upload_tabidx + 1 }}"/>
+  <input type="file" name="file" class="" tabindex="{{ upload_tabidx }}"/>
+  <input type="submit" name="upload" class="tb-btn" value="Upload" tabindex="{{ upload_tabidx + 1 }}"/>
 </form>
 {# after the main content is shown: -#}
 <style id="dir-css">
@@ -219,8 +286,11 @@ tr[data-hidden] { opacity: 0.55; }
 <script>
 window.focused = undefined;
 window.onfocus = function () {
-  if (window.focused)
-    focused.querySelector('.file-link').focus();
+  if (!window.focused)
+    return;
+  var filelink = focused.querySelector('.file-link');
+  if (filelink)
+    filelink.focus();
 };
 
 var macKbd = (navigator.userAgent.indexOf('Macintosh') >= 0);
@@ -228,20 +298,25 @@ var macKbd = (navigator.userAgent.indexOf('Macintosh') >= 0);
 var entries = document.querySelectorAll('.entry-row');
 for (var i = 0; i < entries.length; ++i) {
   var tr = entries[i];
-  var filelink = tr.querySelector('.file-link');
   tr.onclick = function () {
     console.log(this);
     window.focused = this;
     this.querySelector('.file-link').focus();
   };
 
+  var filelink = tr.querySelector('.file-link');
+  if (!filelink)
+    continue;
   filelink.onfocus = function () {
-    window.focused = this.parentElement.parentElement;
-    window.focused.classList.add('focused');
+    focused = this.parentElement.parentElement;
+    focused.classList.add('focused');
+    focused.querySelector('.file-select').checked = true;
   };
   filelink.onblur = function () {
     var tr = this.parentElement.parentElement;
     tr.classList.remove('focused');
+    /* TODO: if in existing selection, keep checked */
+    tr.querySelector('.file-select').checked = false;
   }
 }
 var nooutline = document.createElement('style');
@@ -251,19 +326,26 @@ document.head.appendChild(nooutline);
 document.body.onkeydown = function (e) {
   var newFocused;
   if (e.shiftKey || e.ctrlKey || e.altKey || e.metaKey) {
+    console.log((e.shiftKey?"shift+":"") + (e.ctrlKey?"ctrl+":"") + 
+                (e.altKey?"alt+":"") + (e.metaKey?"meta+":"") + e.key);
     if (macKbd ? e.metaKey : e.ctrlKey) {
       switch (e.key) {
         case 'c':
-          focused.querySelector('form[data-do="copy"]').submit();
+          document.querySelector('#do-copy').click();
           break;
         case 'x':
-          focused.querySelector('form[data-do="cut"]').submit();
+          document.querySelector('#do-cut').click();
           break;
         case 'v':
           document.querySelector('form#cb-paste-form').submit();
           break;
       }
     }
+    if (macKbd ? (e.metaKey && e.key == 'Backspace') 
+               : (e.key == 'Delete')) {
+      document.querySelector('#do-delete').click();
+    }
+
     if (macKbd ? e.metaKey : e.altKey) {
       switch (e.key) {
       case 'ArrowUp':
@@ -295,7 +377,7 @@ document.body.onkeydown = function (e) {
         newFocused = focused;
         do { /* skip rows without "entry-name" */
           newFocused = newFocused.nextElementSibling;
-        } while (newFocused && !(newFocused.querySelector('.entry-name a')));
+        } while (newFocused && !(newFocused.querySelector('.file-link')));
       } else
         newFocused = document.querySelectorAll('.entry-row')[0];
       break;
@@ -304,6 +386,12 @@ document.body.onkeydown = function (e) {
       break;
     case 'End':
       newFocused = document.querySelector('.entry-row:last-child');
+      break;
+    case 'F2':
+      if (focused) {
+        var rename = focused.querySelector('.entry-rename a');
+        if (rename) rename.click();
+      }
       break;
     default:
       console.log(e.key + ' is down');
