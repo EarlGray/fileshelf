@@ -2,8 +2,8 @@
 {% block style %}
 <style>
 #dir-entries {
-  position: relative;
-  left: -2em;
+  /*position: relative;*/
+  /*left: -2em;*/
 }
 #dir-entries-header {
   border-bottom: 1px solid #aaa;
@@ -12,7 +12,7 @@
   text-align: left;
   padding: 0.3em 0.5em;
 }
-#dir-entries-header th#deh-dl {
+#dir-entries-header th#deh-icon {
   padding: 0;
 }
 #actionbar {
@@ -38,7 +38,6 @@
   text-align: right;
 }
 .file-select:checked {
-  display: inline-block;
   color: blue;
   opacity: 0.5;
 }
@@ -46,9 +45,11 @@
   float: right;
 }
 #file-rename {
-  font-size: 10pt;
+  font-size: 9pt;
   box-shadow: inset 1px 1px 2px 0 #707070;
   outline: 0;
+  width: 20em;
+  padding: 0.5em;
 }
 
 .entry-size {
@@ -73,19 +74,19 @@
 .entry-em {
   font-weight: bold;
 }
+tr[data-hidden] { opacity: 0.55; }
+.block { display: block; }
+.icon::after { content: '.'; }
+.icon { background-size: 1.2em; width: 20px; background-repeat: no-repeat; text-indent: -200em; }
+.focused { background-color: #d8e0ff; }
 </style>
 {% endblock %}
 
-{% block toolbar %}
-{#<label for="do-download" class="tb-btn">Download</label>
-<label for="do-copy" class="tb-btn">Copy</label>
-<label for="do-cut" class="tb-btn">Cut</label>
-<label for="do-delete" class="tb-btn">Delete</label>
-#}
-{% endblock %}
+{% block toolbar -%}
+{% endblock -%}
 
 {% block body %}
-{% if clipboard %}
+{% if clipboard -%}
 <details id="clipboard-container" class="inline" style="padding-left: 0.2em;">
   <summary>
     clipboard
@@ -149,29 +150,22 @@
         title="" class="tb-btn">
       Delete
     </button>
-    {#<hr/>#}
   </div>
   <table id="dir-entries">
     <tr id="dir-entries-header">
-      <th id="deh-cb"></th>
-      <th id="deh-dl" class="dl-icon icon"> </th>
-      <th>name &nbsp;</th>
-      <th id="deh-ren"></th>
-      {# <th>type &nbsp;</th> -#}
-      <th>created &nbsp;</th>
-      <th>size &nbsp;</th>
-      {# <th>access &nbsp;</th> -#}
-      {# <th>action &nbsp;</th> -#}
+      <th id="deh-icon" class="dl-icon icon"> </th>
+      <th id="deh-name">name &nbsp;</th>
+      <th id="deh-rename"></th>
+      <th id="deh-ctime">created &nbsp;</th>
+      <th id="deh-size">size &nbsp;</th>
+      <th id="deh-select"></th>
     </tr>
     {% for entry in lsdir %}
     <tr class="entry-row"
         {% if entry.is_hidden -%}data-hidden {% endif -%}
-        {% if entry.mime -%}data-mime="{{ entry.mime }}"{% endif -%}
+        {% if entry.mime -%}data-mime="{{ entry.mime }}" {% endif -%}
         data-ctime="{{ entry.ctime }}"
         >
-      <td class="entry-select">
-        <input type="checkbox" class="file-select hoverable" name="file" value="{{ entry.name }}"/>
-      </td>
       <td class="entry-icon">
         <a class="{{ entry.icon_src }} block icon" href="{{ entry.href + '?dl' }}"></a>
       </td>
@@ -180,16 +174,16 @@
         <form method="POST">
           <input type="hidden" name="action" value="rename">
           <input type="hidden" name="oldname" value="{{ entry.name }}">
-          <input type="text" id="file-rename" name="newname" value="{{ entry.name }}" autofocus>
-          <input type="submit" value="rename">
+          <input type="text" id="file-rename" name="newname" value="{{ entry.name }}" class="editable focusable" autofocus>
+          <input type="submit" name="rename" value="rename">
         </form>
         {% else -%} 
         {%if entry.see_url -%}
-        <a href="{{ entry.see_url }}" class="file-link" tabindex="{{ entry.tabindex }}">
+        <a href="{{ entry.see_url }}" class="focusable file-link" tabindex="{{ entry.tabindex }}">
           {{ entry.name }}
         </a>
         {% else -%}
-        <a href="{{ entry.href }}" class="file-link" tabindex="{{ entry.tabindex }}">
+        <a href="{{ entry.href }}" class="focusable file-link" tabindex="{{ entry.tabindex }}">
           {{ entry.name }}
         </a>
         {% endif %}
@@ -197,59 +191,31 @@
       </td>
       <td class="entry-rename">
         <a href="{{ entry.rename_url }}" class="hoverable" title="rename">
-          <img src="{{ url_for('static_handler', path='rename.png') }}" width="16" height="16" class=hoverable">
+          <img src="{{ url_for('static_handler', path='rename.png') }}" width="16" height="16" class="hoverable">
         </a>
       </td>
-      {# <td class="entry-type">{{ entry.mime }}</td> -#}
       <td class="entry-ctime" title="{{ entry.full_ctime }}">{{ entry.created_at }}</td>
       <td class="pull-right entry-size">{{ entry.size }}</td>
-      {# <td class="pull-right entry-access">
-        {% if entry.shared -%}
-        <a class="entry-em" href="{{ entry.shared }}">public</a>
-        {% elif not entry.isdir -%}
-        <form class="hoverable" action="" method="POST">
-          <input type="hidden" name="action" value="share">
-          <input type="hidden" name="file" value="{{ entry.name }}">
-          <input type="submit" name="share" value="share">
-        </form>
-        {% endif -%}
-      </td>  -#}
-      {#<td class="entry-action">
-        <form data-do="copy" class="hoverable" method="POST">
-          <input type="hidden" name="action" value="copy">
-          <input type="hidden" name="name" value="{{ entry.name }}">
-          <input type="submit" name="copy" value="copy">
-        </form>
-        <form data-do="cut" class="hoverable" method="POST">
-          <input type="hidden" name="action" value="cut">
-          <input type="hidden" name="name" value="{{ entry.name }}">
-          <input type="submit" name="cut" value="cut">
-        </form>
-        {% if entry.rename_url -%}
-        <a href="{{ entry.rename_url }}" class="hoverable">
-          <input type="button" value="rename">
-        </a>
-        {% endif -%}
-        <form data-do="delete" class="hoverable" action="" method="POST">
-          <input type="hidden" name="action" value="delete">
-          <input type="hidden" name="filename" value="{{ entry.name }}">
-          <input type="submit" name="delete" value="delete">
-        </form>
-      </td> -#}
+      <td class="entry-select">
+        <input type="checkbox" class="file-select hoverable" name="file" value="{{ entry.name }}"/>
+      </td>
     </tr>
     {% if entry.play -%}
-    <tr class="entry-play">
-      <td class="entry-select"></td>
+    <tr class="entry-row entry-play">
       <td class="entry-icon"></td>
       <td class="entry-name">
-        <audio id="play-audio" src="{{ entry.href }}" autoplay="true" controls>No sound :(</audio>
+        <audio id="play-audio" src="{{ entry.href }}" class="focusable" autoplay="true" controls>No sound :(</audio>
       </td>
       <td class="entry-ctime">&#8617;</td>
+      <td class="entry-size"></td>
+      <td class="entry-select">
+        <input type="checkbox" disabled class="file-select hoverable" name="audio" value=""/>
+      </td>
     </tr>
     <script>
-      var tr = document.querySelector('tr.entry-play');
-      var player = tr.querySelector('audio');
+      var player = document.querySelector('#play-audio');
       player.onended = function () {
+        var tr = document.querySelector('tr.entry-play');
         while (true) {
           tr = tr.nextElementSibling;
           if (!tr)
@@ -274,134 +240,9 @@
 </form>
 {# after the main content is shown: -#}
 <style id="dir-css">
-.block { display: block; }
-.icon::after { content: '.'; }
-tr[data-hidden] { opacity: 0.55; }
-.icon { background-size: 1.2em; width: 20px; background-repeat: no-repeat; text-indent: -200em; }
 .dir-icon { background-image: url("data:image/png;base64,{% include "res/dir.png.base64" -%}"); }
 .file-icon { background-image: url("data:image/gif;base64,{% include "res/file.gif.base64" -%}"); }
 .dl-icon { background-image: url("data:image/svg+xml;base64,{% include "res/dl.svg.base64" %}"); }
-.focused { background-color: #e8eeff; }
 </style>
-<script>
-window.focused = undefined;
-window.onfocus = function () {
-  if (!window.focused)
-    return;
-  var filelink = focused.querySelector('.file-link');
-  if (filelink)
-    filelink.focus();
-};
-
-var macKbd = (navigator.userAgent.indexOf('Macintosh') >= 0);
-
-var entries = document.querySelectorAll('.entry-row');
-for (var i = 0; i < entries.length; ++i) {
-  var tr = entries[i];
-  tr.onclick = function () {
-    console.log(this);
-    window.focused = this;
-    this.querySelector('.file-link').focus();
-  };
-
-  var filelink = tr.querySelector('.file-link');
-  if (!filelink)
-    continue;
-  filelink.onfocus = function () {
-    focused = this.parentElement.parentElement;
-    focused.classList.add('focused');
-    focused.querySelector('.file-select').checked = true;
-  };
-  filelink.onblur = function () {
-    var tr = this.parentElement.parentElement;
-    tr.classList.remove('focused');
-    /* TODO: if in existing selection, keep checked */
-    tr.querySelector('.file-select').checked = false;
-  }
-}
-var nooutline = document.createElement('style');
-nooutline.innerText = '.entry-name > a:focus { outline: 0 }';
-document.head.appendChild(nooutline);
-
-document.body.onkeydown = function (e) {
-  var newFocused;
-  if (e.shiftKey || e.ctrlKey || e.altKey || e.metaKey) {
-    console.log((e.shiftKey?"shift+":"") + (e.ctrlKey?"ctrl+":"") + 
-                (e.altKey?"alt+":"") + (e.metaKey?"meta+":"") + e.key);
-    if (macKbd ? e.metaKey : e.ctrlKey) {
-      switch (e.key) {
-        case 'c':
-          document.querySelector('#do-copy').click();
-          break;
-        case 'x':
-          document.querySelector('#do-cut').click();
-          break;
-        case 'v':
-          document.querySelector('form#cb-paste-form').submit();
-          break;
-      }
-    }
-    if (macKbd ? (e.metaKey && e.key == 'Backspace') 
-               : (e.key == 'Delete')) {
-      document.querySelector('#do-delete').click();
-    }
-
-    if (macKbd ? e.metaKey : e.altKey) {
-      switch (e.key) {
-      case 'ArrowUp':
-        var path = location.pathname.split('/');
-        if (path.length > 2) {
-          path.pop();
-          window.location = path.join('/');
-        }
-        break;
-      case 'ArrowDown':
-        var path = focused.querySelector('.file-link').href;
-        window.location = path;
-        break;
-      }
-    }
-  } else {
-    switch (e.key) {
-    case 'ArrowUp':
-      if (focused) {
-        newFocused = focused;
-        do { /* skip rows without "entry-name" */
-            newFocused = newFocused.previousElementSibling;
-        } while (newFocused && !(newFocused.querySelector('.file-link')));
-      } else
-        newFocused = document.querySelectorAll('.entry-row:last-child');
-      break;
-    case 'ArrowDown':
-      if (focused) {
-        newFocused = focused;
-        do { /* skip rows without "entry-name" */
-          newFocused = newFocused.nextElementSibling;
-        } while (newFocused && !(newFocused.querySelector('.file-link')));
-      } else
-        newFocused = document.querySelectorAll('.entry-row')[0];
-      break;
-    case 'Home':
-      newFocused = document.querySelector('.entry-row');
-      break;
-    case 'End':
-      newFocused = document.querySelector('.entry-row:last-child');
-      break;
-    case 'F2':
-      if (focused) {
-        var rename = focused.querySelector('.entry-rename a');
-        if (rename) rename.click();
-      }
-      break;
-    default:
-      console.log(e.key + ' is down');
-    }
-  }
-  /* focus next */
-  if (newFocused) {
-    newFocused.querySelector('.file-link').focus();
-    focused = newFocused;
-  }
-};
-</script>
+<script src="{{ url_for('static_handler', path='dir.js') }}" async></script>
 {% endblock %}

@@ -426,10 +426,13 @@ class DohApp:
         headers = None
         if octetstream:
             headers = {'Content-Type': 'application/octet-stream'}
-        if headers:
-            return flask.send_file(dlpath), 200, headers
-        else:
-            return flask.send_file(dlpath), 200
+        try:
+            if headers:
+                return flask.send_file(dlpath), 200, headers
+            else:
+                return flask.send_file(dlpath), 200
+        except (IOError, OSError) as e:
+            return self.r500(e, path)
 
     def _rename(self, path, oldname, newname):
         print("mv %s/%s %s/%s" % (path, oldname, path, newname))
