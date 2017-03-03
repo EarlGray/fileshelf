@@ -3,9 +3,9 @@ window.focused = undefined;
 window.onfocus = function () {
   if (!window.focused)
     return;
-  var filelink = focused.querySelector('.focusable');
-  if (filelink)
-    filelink.focus();
+  var focusable = focused.querySelector('.focusable');
+  if (focusable)
+    focusable.focus();
 };
 
 var entries = document.querySelectorAll('.entry-row');
@@ -13,26 +13,25 @@ for (var i = 0; i < entries.length; ++i) {
   var tr = entries[i];
   tr.onclick = function () {
     window.focused = this;
-    var filelink = this.querySelector('.focusable');
-    if (filelink) filelink.focus();
+    var focusable = this.querySelector('.focusable');
+    if (focusable) focusable.focus();
   };
 
   var filesel = tr.querySelector('.entry-select');
   filesel.style.display = 'none';
 
-  var filelink = tr.querySelector('.file-link');
-  if (filelink) {
-    filelink.onfocus = function () {
+  var focusable = tr.querySelector('.focusable');
+  if (focusable) {
+    focusable.onfocus = function () {
+      if (focused) {
+        focused.classList.remove('focused');
+        /* TODO: if in existing selection, keep checked */
+        focused.querySelector('.file-select').checked = false;
+      }
       focused = this.parentElement.parentElement;
       focused.classList.add('focused');
       focused.querySelector('.file-select').checked = true;
     };
-    filelink.onblur = function () {
-      var tr = this.parentElement.parentElement;
-      tr.classList.remove('focused');
-      /* TODO: if in existing selection, keep checked */
-      tr.querySelector('.file-select').checked = false;
-    }
   }
 }
 document.querySelector('#deh-select').style.display = 'none';

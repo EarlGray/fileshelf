@@ -1,12 +1,9 @@
 {% extends "tmpl.htm" %}
 {% block style %}
 <style>
-#dir-entries {
-  /*position: relative;*/
-  /*left: -2em;*/
-}
+#dir-entries {}
 #dir-entries-header {
-  border-bottom: 1px solid #aaa;
+  border-bottom: 1px solid #888;
 }
 #dir-entries-header th {
   text-align: left;
@@ -17,6 +14,7 @@
 }
 #actionbar {
   margin: 0em 0em 1em 0em;
+  /*width: 20em; margin: 0 auto 1em auto; */
 }
 
 .entry-row {
@@ -49,7 +47,7 @@
   box-shadow: inset 1px 1px 2px 0 #707070;
   outline: 0;
   width: 20em;
-  padding: 0.5em;
+  padding: 0.1em 0;
 }
 
 .entry-size {
@@ -103,16 +101,16 @@ tr[data-hidden] { opacity: 0.55; }
     <table id="clipboard-tbl">
       <tbody>
         <tr>
-          <th>type</th>
-          <th>path</th>
           <th></th>
+          <th></th>
+          <th>path</th>
           <th>action</th>
         </tr>
         {% for entry in clipboard -%}
         <tr>
-          <td class="{{ entry.icon_src }} icon"></td>
-          <td>{{ entry.path }}</td>
           <td>{{ entry.do }}</td>
+          <td class="entry-icon {{ entry.icon_src }} icon"></td>
+          <td>{{ entry.path }}</td>
           <td>
             <form method="POST">
               <input type="hidden" name="action" value="restore">
@@ -174,7 +172,9 @@ tr[data-hidden] { opacity: 0.55; }
         <form method="POST">
           <input type="hidden" name="action" value="rename">
           <input type="hidden" name="oldname" value="{{ entry.name }}">
-          <input type="text" id="file-rename" name="newname" value="{{ entry.name }}" class="editable focusable" autofocus>
+          <input type="text" id="file-rename"
+                 name="newname" value="{{ entry.name }}"
+                 class="editable focusable" autofocus spellcheck="false">
           <input type="submit" name="rename" value="rename">
         </form>
         {% else -%} 
@@ -191,13 +191,14 @@ tr[data-hidden] { opacity: 0.55; }
       </td>
       <td class="entry-rename">
         <a href="{{ entry.rename_url }}" class="hoverable" title="rename">
-          <img src="{{ url_for('static_handler', path='rename.png') }}" width="16" height="16" class="hoverable">
+          <img src="{{ url_for('static_handler', path='rename.png') }}" width="16" height="16" class="">
         </a>
       </td>
       <td class="entry-ctime" title="{{ entry.full_ctime }}">{{ entry.created_at }}</td>
       <td class="pull-right entry-size">{{ entry.size }}</td>
       <td class="entry-select">
-        <input type="checkbox" class="file-select hoverable" name="file" value="{{ entry.name }}"/>
+        <input type="checkbox" class="file-select hoverable"
+               name="file" value="{{ entry.name }}" form="dir-actions"/>
       </td>
     </tr>
     {% if entry.play -%}
