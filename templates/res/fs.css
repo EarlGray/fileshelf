@@ -21,6 +21,11 @@ a, a:visited {
 .small { font-size: 80%; }
 .clearfix { overflow: auto; }
 
+#authbar {
+  float: right;
+  font-size: 15pt;
+}
+
 /* toolbar */
 #toolbar {
   float: right;

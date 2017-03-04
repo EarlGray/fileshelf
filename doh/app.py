@@ -4,7 +4,6 @@ import os
 import time
 import uuid
 import string
-from base64 import decodestring as b64decode
 from collections import namedtuple
 
 import flask
@@ -13,8 +12,8 @@ from werkzeug.utils import secure_filename
 
 import doh.url as url
 import doh.content as content
+from doh.access import AuthChecker, UserDb
 from doh.rproxy import ReverseProxied
-from doh.storage import LocalStorage
 
 
 def default_conf(appdir):
@@ -31,9 +30,15 @@ def default_conf(appdir):
 
         # directories:
         'app_dir': appdir,
-        'storage_dir': os.path.join(appdir, 'storage'),
-        'static_dir': os.path.join(appdir, 'static'),
         'data_dir': os.path.join(appdir, 'data'),
+        'static_dir': os.path.join(appdir, 'static'),
+        'storage_dir': os.path.join(appdir, 'storage'),  # without users
+
+        # users:
+        'multiuser': False,
+        'auth': None,           # null, 'basic'
+        'auth_htpasswd': None,  # data/htpasswd.db by default
+        'auth_https_only': False,
 
         # used to offload large static files to a static server (nginx):
         'offload_dir': None,
@@ -55,7 +60,6 @@ class DohApp:
         app = Flask(__name__, template_folder=template_dir)
 
         app.debug = conf['debug']
-        app.storage_dir = conf['storage_dir']
         app.static_dir = conf['static_dir']
         app.data_dir = conf['data_dir']
         # app.share_dir = conf['share_dir']
@@ -73,10 +77,12 @@ class DohApp:
 
         # self.shared = self._scan_share(app.share_dir)
 
-        self.storage = LocalStorage(app.storage_dir, app.data_dir)
-
         plugin_dir = os.path.join(self.app_dir, 'doh/content')
         self.plugins = content.Plugins(plugin_dir)
+
+        self.users = UserDb(conf)
+        self.auth = AuthChecker(conf)
+        # self.storage = LocalStorage(app.storage_dir, app.data_dir)
 
         self.conf = conf
 
@@ -94,19 +100,15 @@ class DohApp:
             if not os.path.exists(fname):
                 return self.r404(path)
 
-            # print('Serving %s' % fname)
             return flask.send_file(fname)
 
         @app.route(url._my, defaults={'path': ''}, methods=['GET', 'POST'])
         @app.route(url.join(url._my, '<path:path>'), methods=['GET', 'POST'])
+        @self.auth.check_access
         def path_handler(path):
             req = flask.request
-
-            auth = req.headers.get('Authorization')
-            user = ''
-            if auth and auth.startswith('Basic '):
-                user = b64decode(auth.split()[1]).split(':')[0]
-            print('### method=%s path=%s user=%s' % (req.method, path, user))
+            # don't store it permanently:
+            self.storage = self.users.storage(req.user)
 
             if req.method == 'GET':
                 return self._path_get(req, path)
@@ -125,6 +127,9 @@ class DohApp:
         #     return flask.send_file(fname)
 
         self.app = app
+
+    def _log(self, msg):
+        print('## App: ', msg)
 
     def _path_get(self, req, path):
         if not self.storage.exists(path):
@@ -168,21 +173,21 @@ class DohApp:
                 tmpl = 'media.htm'
             return flask.render_template(tmpl, **args)
 
-        print(req.args)
+        self._log(req.args)
         is_dl = 'dl' in req.args.itervalues()
         return self._download(path, octetstream=is_dl)
 
     def _path_post(self, req, path):
         if 'update' in req.args:
-            print('update request for %s:' % path)
-            print(req.data)
-            print('------------------------------')
+            self._log('update request for %s:' % path)
+            self._log(req.data)
+            self._log('------------------------------')
             e = self.storage.write_text(path, req.data)
             if e:
                 return flask.Response(str(e)), 400
             return flask.Response("saved"), 200
 
-        print(req.form)
+        self._log(req.form)
         actions = req.form.getlist('action')
         if 'rename' in actions:
             oldname = req.form.get('oldname')
@@ -367,6 +372,8 @@ class DohApp:
                 entry['tabindex'] = tabindex
                 tabindex += 1
 
+            user = getattr(flask.request, 'user')
+            self._log('user=' + user)
             templvars = {
                 'path': path,
                 'lsdir': lsdir,
@@ -375,6 +382,7 @@ class DohApp:
                 'rename': flask.request.args.get('rename'),
                 'clipboard': clipboard,
                 'upload_tabidx': tabindex,
+                'user': user
             }
             return flask.render_template('dir.htm', **templvars)
         except OSError as e:
@@ -401,7 +409,7 @@ class DohApp:
         tmppath = self._mktemp(f.filename)
         exc = None
         try:
-            print('Saving file as %s ...' % tmppath)
+            self._log('Saving file as %s ...' % tmppath)
             f.save(tmppath)
             exc = self.storage.move_from_fpath(tmppath, path, f.filename)
         except (OSError, IOError, ValueError) as e:
@@ -417,7 +425,7 @@ class DohApp:
             if e:
                 return self.r500(e)
             if u:
-                print('Redirecting to static: %s' % u)
+                self._log('Redirecting to static: %s' % u)
                 return flask.redirect(u)
 
         # TODO: hide _fullpath(), figure out a generic way of serving
@@ -435,7 +443,7 @@ class DohApp:
             return self.r500(e, path)
 
     def _rename(self, path, oldname, newname):
-        print("mv %s/%s %s/%s" % (path, oldname, path, newname))
+        self._log("mv %s/%s %s/%s" % (path, oldname, path, newname))
         if os.path.dirname(oldname):
             return self.r400('Expected bare filename: ' + oldname)
         if os.path.dirname(newname):
@@ -458,7 +466,7 @@ class DohApp:
                 return self.r400('Expected bare filename: ' + fname)
 
             fpath = os.path.join(path, fname)
-            print("rm %s" % fpath)
+            self._log("rm %s" % fpath)
             e = self.storage.delete(fpath)
             if e:
                 return self.r500(e, path=fpath)
