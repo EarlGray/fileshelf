@@ -12,6 +12,10 @@ class AuthError(Exception):
     pass
 
 
+class NoSuchUser(Exception):
+    pass
+
+
 class AuthChecker:
     methods = [None, 'basic']
 
@@ -30,8 +34,8 @@ class AuthChecker:
     def _log(self, msg):
         print('## Auth: ' + msg)
 
-    def check_access(self, f):
-        @wraps(f)
+    def check_access(self, handler):
+        @wraps(handler)
         def decorated(*args, **kwargs):
             req = flask.request
             if self.https_only and req.environ['wsgi.url_scheme'] != 'https':
@@ -41,7 +45,7 @@ class AuthChecker:
 
             user = None
             if self.auth is None:
-                user = ''
+                user = UserDb.DEFAULT
             elif self.auth == 'basic':
                 user = self._check_basic_auth(req)
                 if user is None:
@@ -56,7 +60,7 @@ class AuthChecker:
                        user, req.environ['HTTP_HOST'], path,
                        req.environ['QUERY_STRING']))
             flask.request.user = user
-            return f(*args, **kwargs)
+            return handler(*args, **kwargs)
         return decorated
 
     def _check_basic_auth(self, req):
@@ -72,11 +76,15 @@ class AuthChecker:
         ret = self.htpasswd.check_password(user, passwd)
         if ret is None:
             self._log('basic auth: user %s not found' % user)
-        elif ret is False:
+            return None
+        if ret is False:
             self._log('basic auth: check_password(<%s>, <%s>) failed'
                       % (user, passwd))
             return None
         return user
+
+    def user_exists(self, user):
+        return (user in self.htpasswd)
 
 
 class UserDb:
@@ -124,5 +132,8 @@ class UserDb:
         self.users = users
 
     def storage(self, user):
-        user = user or self.DEFAULT
-        return self.users[user]['storage']
+        try:
+            user = user or self.DEFAULT
+            return self.users[user]['storage']
+        except KeyError:
+            raise NoSuchUser('No such user: ' + user)
