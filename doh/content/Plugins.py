@@ -19,7 +19,7 @@ class Plugins:
             modname = 'doh.content.' + entry
             mod = __import__(modname)
             mod = mod.content.__dict__[entry]
-            for name, item in mod.__dict__.iteritems():
+            for name, item in mod.__dict__.items():
                 if not hasattr(item, '__bases__'):
                     continue
                 if Handler not in item.__bases__:
