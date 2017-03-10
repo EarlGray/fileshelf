@@ -372,7 +372,6 @@ class DohApp:
                 tabindex += 1
 
             user = getattr(flask.request, 'user')
-            self._log('user=' + user)
             templvars = {
                 'path': path,
                 'lsdir': lsdir,
