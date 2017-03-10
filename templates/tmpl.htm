@@ -38,7 +38,8 @@
     </span>
     {% if user -%}
     <span id="authbar">
-      <img src="{{ url_for('static_handler', path='nerdy.png') }}" width="24" height="24" class="centered">
+      <img src="{{ url_for('static_handler', path='nerdy.png') }}"
+           width="24" height="24" class="centered">
       {{ user }}
     </span>
     {% endif -%}

@@ -134,8 +134,9 @@ class LocalStorage:
     def write_text(self, path, data):
         path = self._fullpath(path)
         try:
+            data = data.decode('utf-8') if hasattr(data, 'decode') else data
             with io.open(path, 'w', encoding='utf8') as f:
-                f.write(data.decode('utf8'))
+                f.write(data)
         except (IOError, OSError, UnicodeDecodeError) as e:
             return e
 

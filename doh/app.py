@@ -3,7 +3,6 @@ from __future__ import print_function
 import os
 import time
 import uuid
-import string
 from collections import namedtuple
 
 import flask
@@ -174,7 +173,7 @@ class DohApp:
             return flask.render_template(tmpl, **args)
 
         self._log(req.args)
-        is_dl = 'dl' in req.args.itervalues()
+        is_dl = 'dl' in req.args.values()
         return self._download(path, octetstream=is_dl)
 
     def _path_post(self, req, path):
@@ -217,7 +216,7 @@ class DohApp:
             return self.r400('cannot create file with type ' + mime)
         if action == 'cut':
             files = req.form.getlist('file')
-            files = map(string.strip, files)
+            files = map(str.strip, files)
             for f in files:
                 name = os.path.join(path, f)
                 e = self.storage.clipboard_cut(name)
@@ -226,7 +225,7 @@ class DohApp:
             return flask.redirect(url.my(path))
         if action == 'copy':
             files = req.form.getlist('file')
-            files = map(string.strip, files)
+            files = map(str.strip, files)
             for f in files:
                 name = os.path.join(path, f)
                 e = self.storage.clipboard_copy(name)

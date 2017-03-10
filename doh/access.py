@@ -28,8 +28,9 @@ class AuthChecker:
         self.https_only = conf.get('auth_https_only')
 
         htpasswd = os.path.join(conf['data_dir'], 'htpasswd.db')
-        htpasswd = conf.get('auth_htpasswd', htpasswd)
+        htpasswd = conf.get('auth_htpasswd') or htpasswd
         self.htpasswd = HtpasswdFile(htpasswd)
+        self._log('Using htpasswd: ' + str(htpasswd))
 
     def _log(self, msg):
         print('## Auth: ' + msg)
@@ -72,8 +73,12 @@ class AuthChecker:
             self._log('basic auth: not Basic')
             return None
 
-        user, passwd = b64decode(auth.split()[1]).split(':')
+        auth = auth.split()[1]
+        auth = auth.encode('ascii')
+        user, passwd = b64decode(auth).split(b':')
         ret = self.htpasswd.check_password(user, passwd)
+        user = user.decode('ascii')
+        passwd = passwd.decode('ascii')
         if ret is None:
             self._log('basic auth: user %s not found' % user)
             return None
