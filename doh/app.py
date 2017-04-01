@@ -32,6 +32,7 @@ def default_conf(appdir):
         'data_dir': os.path.join(appdir, 'data'),
         'static_dir': os.path.join(appdir, 'static'),
         'storage_dir': os.path.join(appdir, 'storage'),  # without users
+        'template_dir': os.path.join(appdir, 'tmpl'),
 
         # users:
         'multiuser': False,
@@ -43,7 +44,6 @@ def default_conf(appdir):
         'offload_dir': None,
         'offload_path': None,
 
-        'template_dir': '../templates'
     }
 
 
@@ -77,7 +77,7 @@ class DohApp:
         # self.shared = self._scan_share(app.share_dir)
 
         plugin_dir = os.path.join(self.app_dir, 'doh/content')
-        self.plugins = content.Plugins(plugin_dir)
+        self.plugins = content.Plugins(conf, plugin_dir)
 
         self.users = UserDb(conf)
         self.auth = AuthChecker(conf)

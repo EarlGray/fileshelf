@@ -5,10 +5,48 @@ from doh.content import Handler
 
 
 class Plugins:
-    def __init__(self, plugins_dir):
-        self.plugins_dir = plugins_dir
+    """ Manages plugins, their priorities and dispatches requests """
+
+    def __init__(self, conf, plugins_dir):
+        self.conf = conf
         self.plugins = {}
 
+        for name, Plugin in Plugins._scan(plugins_dir):
+            try:
+                plugin = Plugin()
+            except Exception as e:
+                self._log('init error: ' + name)
+                self._log(e)
+
+            self._init(plugins_dir, name)
+
+            self.plugins[name] = plugin
+            self._log('initialized: ' + name)
+
+    def _init(self, plugins_dir, name):
+        """ initializes directories for the plugin `name` """
+        plugin_dir = os.path.join(plugins_dir, name)
+
+        def check_and_link(sub_dir, into_dir):
+            sub_dir = os.path.join(plugin_dir, sub_dir)
+            if not os.path.isdir(sub_dir):
+                return
+            link_path = os.path.join(into_dir, name)
+            if os.path.islink(link_path):
+                os.remove(link_path)
+
+            # self._log('ln "%s" -> "%s"' % (sub_dir, link_path))
+            os.symlink(sub_dir, link_path)
+
+        check_and_link('res', into_dir=self.conf['static_dir'])
+        check_and_link('tmpl', into_dir=self.conf['template_dir'])
+
+    def _log(self, *msgs):
+        print('## Plugins: ', end='')
+        print(*msgs)
+
+    @staticmethod
+    def _scan(plugins_dir):
         for entry in os.listdir(plugins_dir):
             plugin_dir = os.path.join(plugins_dir, entry)
             if not os.path.isdir(plugin_dir):
@@ -19,15 +57,17 @@ class Plugins:
             modname = 'doh.content.' + entry
             mod = __import__(modname)
             mod = mod.content.__dict__[entry]
-            for name, item in mod.__dict__.items():
-                if not hasattr(item, '__bases__'):
-                    continue
-                if Handler not in item.__bases__:
-                    continue
 
-                plugin = item()
-                self.plugins[item] = plugin
-                break
+            Plugin = Plugins._find_plugin_in(mod)
+            if Plugin:
+                yield (entry, Plugin)
+
+    @staticmethod
+    def _find_plugin_in(mod):
+        for name, Plugin in mod.__dict__.items():
+            if hasattr(Plugin, '__bases__') and Handler in Plugin.__bases__:
+                return Plugin
+        return None
 
     def dispatch(self, req, storage, path):
         handlers = {
