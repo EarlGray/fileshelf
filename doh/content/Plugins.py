@@ -1,6 +1,7 @@
 from __future__ import print_function
 
 import os
+import json
 from doh.content import Handler
 
 
@@ -11,17 +12,17 @@ class Plugins:
         self.conf = conf
         self.plugins = {}
 
-        for name, Plugin in Plugins._scan(plugins_dir):
+        for name, Plugin, conf in Plugins._scan(plugins_dir):
             try:
-                plugin = Plugin()
+                plugin = Plugin(name, conf)
+                self._init(plugins_dir, name)
+
+                self.plugins[name] = plugin
+                self._log('initialized: ' + name)
+                # self._log('conf:', json.dumps(conf))
             except Exception as e:
-                self._log('init error: ' + name)
+                self._log('init error: plugin ' + name)
                 self._log(e)
-
-            self._init(plugins_dir, name)
-
-            self.plugins[name] = plugin
-            self._log('initialized: ' + name)
 
     def _init(self, plugins_dir, name):
         """ initializes directories for the plugin `name` """
@@ -51,16 +52,25 @@ class Plugins:
             plugin_dir = os.path.join(plugins_dir, entry)
             if not os.path.isdir(plugin_dir):
                 continue
-            if '__init__.py' not in os.listdir(plugin_dir):
-                continue
 
-            modname = 'doh.content.' + entry
-            mod = __import__(modname)
-            mod = mod.content.__dict__[entry]
+            # read `plugin.json` if exists
+            conf = {}
+            conf_path = os.path.join(plugin_dir, 'plugin.json')
+            if os.path.exists(conf_path):
+                conf = json.load(open(conf_path))
 
-            Plugin = Plugins._find_plugin_in(mod)
-            if Plugin:
-                yield (entry, Plugin)
+            if '__init__.py' in os.listdir(plugin_dir):
+                # import Plugin class from __init__.py
+                modname = 'doh.content.' + entry
+                mod = __import__(modname)
+                mod = mod.content.__dict__[entry]
+
+                Plugin = Plugins._find_plugin_in(mod)
+                if Plugin:
+                    yield (entry, Plugin, conf)
+            elif os.path.exists(os.path.join(plugin_dir, 'tmpl/index.htm')):
+                # no plugin class, but `tmpl/index.htm` is there
+                yield (entry, Handler, conf)
 
     @staticmethod
     def _find_plugin_in(mod):
@@ -69,14 +79,17 @@ class Plugins:
                 return Plugin
         return None
 
-    def dispatch(self, req, storage, path):
+    def __contains__(self, name):
+        return name in self.plugins
+
+    def dispatch(self, storage, path):
         handlers = {
             Handler.MUST: [],
             Handler.SHOULD: [],
             Handler.CAN: []
         }
-        for name, plugin in self.plugins.iteritems():
-            prio = plugin.can_handle(req, path)
+        for name, plugin in self.plugins.items():
+            prio = plugin.can_handle(storage, path)
             if prio == Handler.DOESNT:
                 continue
             elif prio == Handler.MUST:
@@ -91,8 +104,9 @@ class Plugins:
         else:
             return None
 
-    def render(self, req, storage, path):
-        name = self.dispatch(req, storage, path)
-        if name:
-            plugin = self.plugins[name]
-            return plugin.render(req, storage, path)
+    def render(self, req, storage, path, name=None):
+        name = name or self.dispatch(storage, path)
+        if not name:
+            return
+        plugin = self.plugins[name]
+        return plugin.render(req, storage, path)

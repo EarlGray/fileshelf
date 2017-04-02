@@ -1,0 +1,32 @@
+{% extends "tmpl.htm" %}
+{% block style %}
+<style>
+#reading-area {
+  margin: 1em;
+  width: calc(100% - 2em);
+  height: calc(100vh - 8em);
+}
+</style>
+{% endblock %}
+
+{% block toolbar %}
+<div id="book-toolbar" class="centered">
+  <button id="btn-prev-page" class="tb-btn" onclick="theBook.prevPage();">&lt; prev page</button>
+  <button id="btn-next-page" class="tb-btn" onclick="theBook.nextPage();">next page &gt;</button>
+</div>
+{% endblock %}
+
+{% block body %}
+<div id="reading-area">
+</div>
+<script src="https://cdn.jsdelivr.net/jszip/2.5.0/jszip.min.js"></script>
+<script src="https://cdn.jsdelivr.net/epub.js/0.2.15/epub.min.js"></script>
+<script>
+  var file_url = "{{ file_url }}";
+  var area = document.querySelector('#reading-area');
+  window.theBook = ePub(file_url, {
+    restore: true
+  });
+  theBook.renderTo(area);
+</script>
+{% endblock %}

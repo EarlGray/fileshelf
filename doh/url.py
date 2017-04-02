@@ -27,7 +27,7 @@ def res(*args):
     return u
 
 
-def prefixes(exists, path):
+def _prefixes(exists, path):
     """ generates a list of [(path_chunk, path_href or None)]
         `path_href` may be None if this path is not in the filesystem
     """
@@ -46,6 +46,18 @@ def prefixes(exists, path):
 
         res.append((d, url))
     return res
+
+
+def prefixes(path, exists=lambda _: True, tabindex=1):
+    ps = _prefixes(exists, path)
+    ret = []
+    for i, p in enumerate(ps):
+        ret.append({
+            'name': p[0],
+            'href': p[1],
+            'tabindex': tabindex + i
+        })
+    return ret
 
 
 def codemirror(path=None):

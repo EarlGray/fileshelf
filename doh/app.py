@@ -21,9 +21,6 @@ def default_conf(appdir):
         'host': '127.0.0.1',
         'port': 5000,
 
-        # url prefix:
-        'rooturl': '/',
-
         # modes:
         'debug': False,
 
@@ -132,6 +129,7 @@ class DohApp:
         print('## App: ', msg)
 
     def _path_get(self, req, path):
+        # self._log('args = ' + str(req.args))
         if not self.storage.exists(path):
             return self.r404(path)
 
@@ -158,22 +156,27 @@ class DohApp:
                 'codemirror_root': url.codemirror(),
                 'text': text,
                 'mimetype': content.guess_mime(path),
-                'path_prefixes': self._gen_prefixes(path),
+                'path_prefixes': self._prefixes(path),
                 'read_only': not entry.can_write
             }
             return flask.render_template('edit.htm', **args)
         if 'see' in req.args:
             mimetype = content.guess_mime(path)
             args = {
-                'frame_url': url.my(path),
-                'path_prefixes': self._gen_prefixes(path)
+                'file_url': url.my(path),
+                'path_prefixes': self._prefixes(path)
             }
             tmpl = 'frame.htm'
             if mimetype.startswith('video/'):
                 tmpl = 'media.htm'
             return flask.render_template(tmpl, **args)
 
-        self._log(req.args)
+        args = list(req.args.keys())
+        if len(args) == 1:
+            if args[0] in self.plugins:
+                self._log(args[0] + ' opens ' + path)
+                return self.plugins.render(req, self.storage, path, args[0])
+
         is_dl = 'dl' in req.args.values()
         return self._download(path, octetstream=is_dl)
 
@@ -250,16 +253,8 @@ class DohApp:
     def run(self):
         self.app.run(host=self.conf['host'], port=self.conf['port'])
 
-    def _gen_prefixes(self, path, tabindex=1):
-        ps = url.prefixes(self.storage.exists, path)
-        ret = []
-        for i, p in enumerate(ps):
-            ret.append({
-                'name': p[0],
-                'href': p[1],
-                'tabindex': tabindex + i
-            })
-        return ret
+    def _prefixes(self, path, tabindex=1):
+        return url.prefixes(path, self.storage.exists, tabindex)
 
     def file_info(self, path):
         entry = self.storage.file_info(path)
@@ -270,15 +265,15 @@ class DohApp:
         #     shared = flask.url_for('pub_handler', path=shared)
         # entry.shared = shared
 
-        entry.see_url = None
+        entry.open_url = None
         if entry.is_text():
-            entry.see_url = entry.href + '?edit'
+            entry.open_url = entry.href + '?edit'
         elif entry.is_audio():
             dirpath = os.path.dirname(path)
             filename = os.path.basename(path)
-            entry.see_url = url.my(dirpath) + '?play=' + filename
+            entry.open_url = url.my(dirpath) + '?play=' + filename
         elif entry.is_viewable():
-            entry.see_url = entry.href + '?see'
+            entry.open_url = entry.href + '?see'
 
         return entry
 
@@ -291,7 +286,7 @@ class DohApp:
             return flask.redirect(url.my())
         args = {
             'path': path,
-            'path_prefixes': self._gen_prefixes(path),
+            'path_prefixes': self._prefixes(path),
             'title': 'no ' + path if path else 'not found'
         }
         mimetype = content.guess_mime(path)
@@ -315,18 +310,27 @@ class DohApp:
             'e': e,
         }
         if path:
-            args['path_prefixes'] = self._gen_prefixes(path)
+            args['path_prefixes'] = self._prefixes(path)
         return flask.render_template('500.htm', **args), 500
 
     def _render_dir(self, path, play=None):
         tabindex = 2
-        addressbar = self._gen_prefixes(path, tabindex)
+        addressbar = self._prefixes(path, tabindex)
         tabindex += len(addressbar)
 
         lsdir = []
         try:
             for fname in self.storage.list_dir(path):
-                entry = self.file_info(url.join(path, fname))
+                file_path = url.join(path, fname)
+                entry = self.file_info(file_path)
+
+                if not entry.open_url:
+                    entry.open_url = entry.href
+
+                    plugin = self.plugins.dispatch(self.storage, file_path)
+                    # self._log('"%s" renders %s' % (plugin, file_path))
+                    if plugin and plugin != 'dir':
+                        entry.open_url += '?' + plugin
 
                 lsfile = {
                     'name': fname,
@@ -335,7 +339,7 @@ class DohApp:
                     'size': entry.size,
                     'isdir': entry.is_dir,
                     'is_hidden': fname.startswith('.'),
-                    'see_url': entry.see_url,
+                    'open_url': entry.open_url,
                     'ctime': entry.ctime,
                     'full_ctime': time.ctime(entry.ctime)+' '+time.tzname[0],
                     'created_at': content.smart_time(entry.ctime),

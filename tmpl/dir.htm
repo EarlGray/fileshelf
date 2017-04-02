@@ -176,15 +176,9 @@ tr[data-hidden] { opacity: 0.55; }
           <input type="submit" name="rename" value="rename">
         </form>
         {% else -%} 
-        {%if entry.see_url -%}
-        <a href="{{ entry.see_url }}" class="focusable file-link" tabindex="{{ entry.tabindex }}">
+        <a href="{{ entry.open_url }}" class="focusable file-link" tabindex="{{ entry.tabindex }}">
           {{ entry.name }}
         </a>
-        {% else -%}
-        <a href="{{ entry.href }}" class="focusable file-link" tabindex="{{ entry.tabindex }}">
-          {{ entry.name }}
-        </a>
-        {% endif %}
         {% endif -%}
       </td>
       <td class="entry-rename">
