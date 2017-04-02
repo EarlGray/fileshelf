@@ -37,6 +37,7 @@ def default_conf(appdir):
         # users:
         'multiuser': False,
         'auth': None,           # null, 'basic'
+        'auth_realm': None,     # basic auth realm
         'auth_htpasswd': None,  # data/htpasswd.db by default
         'auth_https_only': False,
 

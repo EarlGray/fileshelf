@@ -27,10 +27,13 @@ class AuthChecker:
         self.auth = auth
         self.https_only = conf.get('auth_https_only')
 
-        htpasswd = os.path.join(conf['data_dir'], 'htpasswd.db')
-        htpasswd = conf.get('auth_htpasswd') or htpasswd
-        self.htpasswd = HtpasswdFile(htpasswd)
-        self._log('Using htpasswd: ' + str(htpasswd))
+        if auth == 'basic':
+            htpasswd = os.path.join(conf['data_dir'], 'htpasswd.db')
+            htpasswd = conf.get('auth_htpasswd') or htpasswd
+            self.htpasswd = HtpasswdFile(htpasswd)
+            self._log('Using htpasswd: ' + str(htpasswd))
+
+            self.realm = conf.get('auth_realm', 'fileshelf')
 
     def _log(self, msg):
         print('## Auth: ' + msg)
@@ -50,7 +53,9 @@ class AuthChecker:
             elif self.auth == 'basic':
                 user = self._check_basic_auth(req)
                 if user is None:
-                    hdrs = {'WWW-Authenticate': 'Basic realm="Login Required"'}
+                    hdrs = {
+                        'WWW-Authenticate': 'Basic realm="%s"' % self.realm
+                    }
                     # TODO: a nicer page
                     return flask.Response('Login Required', 401, hdrs)
             else:
