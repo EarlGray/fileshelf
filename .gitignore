@@ -2,3 +2,6 @@ venv
 *.pyc
 .*.swp
 .ropeproject
+tmpl/*
+storage/*
+data/*

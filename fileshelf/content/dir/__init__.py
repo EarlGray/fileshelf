@@ -1,4 +1,4 @@
-from doh.content import Handler
+from fileshelf.content import Handler
 
 
 class DirHandler(Handler):

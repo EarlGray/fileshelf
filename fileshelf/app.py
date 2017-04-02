@@ -9,10 +9,10 @@ import flask
 from flask import Flask
 from werkzeug.utils import secure_filename
 
-import doh.url as url
-import doh.content as content
-from doh.access import AuthChecker, UserDb
-from doh.rproxy import ReverseProxied
+import fileshelf.url as url
+import fileshelf.content as content
+from fileshelf.access import AuthChecker, UserDb
+from fileshelf.rproxy import ReverseProxied
 
 
 def default_conf(appdir):
@@ -74,7 +74,7 @@ class DohApp:
 
         # self.shared = self._scan_share(app.share_dir)
 
-        plugin_dir = os.path.join(self.app_dir, 'doh/content')
+        plugin_dir = os.path.join(self.app_dir, 'fileshelf/content')
         self.plugins = content.Plugins(conf, plugin_dir)
 
         self.users = UserDb(conf)

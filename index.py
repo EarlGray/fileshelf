@@ -2,7 +2,7 @@ import json
 
 import sys
 
-from doh import DohApp
+from fileshelf import DohApp
 
 if __name__ == '__main__':
     conf = {}

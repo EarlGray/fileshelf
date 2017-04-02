@@ -2,7 +2,8 @@ from __future__ import print_function
 
 import os.path
 import flask
-import doh.url as url
+
+import fileshelf.url as url
 
 
 class Handler:

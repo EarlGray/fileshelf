@@ -2,7 +2,7 @@ from __future__ import print_function
 
 import os
 import json
-from doh.content import Handler
+from fileshelf.content import Handler
 
 
 class Plugins:
@@ -61,7 +61,7 @@ class Plugins:
 
             if '__init__.py' in os.listdir(plugin_dir):
                 # import Plugin class from __init__.py
-                modname = 'doh.content.' + entry
+                modname = 'fileshelf.content.' + entry
                 mod = __import__(modname)
                 mod = mod.content.__dict__[entry]
 

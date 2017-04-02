@@ -5,8 +5,8 @@ import uuid
 import errno
 import shutil
 
-import doh.content as content
-import doh.url as url
+import fileshelf.url as url
+import fileshelf.content as content
 
 
 class LocalStorage:

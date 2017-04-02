@@ -1,8 +1,8 @@
 import time
 import mimetypes
 
-from doh.content.Handler import Handler
-from doh.content.Plugins import Plugins
+from fileshelf.content.Handler import Handler
+from fileshelf.content.Plugins import Plugins
 
 mime_by_extension = {
     'org': 'text/x-org',

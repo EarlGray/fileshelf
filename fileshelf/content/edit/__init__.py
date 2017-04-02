@@ -1,7 +1,7 @@
 import flask
 
-import doh.url as url
-import doh.content as content
+import fileshelf.url as url
+import fileshelf.content as content
 
 
 def codemirror_path(path=None):

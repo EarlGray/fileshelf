@@ -5,7 +5,7 @@ import os.path
 import flask
 from passlib.apache import HtpasswdFile
 
-from doh.storage import LocalStorage
+from fileshelf.storage import LocalStorage
 
 
 class AuthError(Exception):
