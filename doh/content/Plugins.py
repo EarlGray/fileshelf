@@ -82,6 +82,9 @@ class Plugins:
     def __contains__(self, name):
         return name in self.plugins
 
+    def get(self, name, default=None):
+        return self.plugins.get(name, default)
+
     def dispatch(self, storage, path):
         handlers = {
             Handler.MUST: [],

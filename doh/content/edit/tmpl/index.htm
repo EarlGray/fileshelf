@@ -165,7 +165,7 @@ var loadCodemirror = function (path, loaded, src) {
 var saveText = function () {
   console.log('saving...');
   var text = the_editor.getValue();
-  var url = location.pathname + '?update';
+  var url = location.pathname + '?edit=update';
 
   var saveButton = document.querySelector('#save-btn');
   saveButton.classList.add('save-btn-saving');

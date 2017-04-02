@@ -50,7 +50,7 @@ class Handler:
         return flask.render_template(tmpl, **args)
 
     def action(self, req, storage, path):
-        """ handles POST requests """
+        """ handles POST requests, to override """
         raise NotImplementedError('Handler.action')
 
     def _log(self, *msgs):

@@ -58,8 +58,3 @@ def prefixes(path, exists=lambda _: True, tabindex=1):
             'tabindex': tabindex + i
         })
     return ret
-
-
-def codemirror(path=None):
-    cdn_root = 'https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.23.0'
-    return join(cdn_root, path) if path else cdn_root

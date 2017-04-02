@@ -128,6 +128,13 @@ class DohApp:
     def _log(self, msg):
         print('## App: ', msg)
 
+    def _is_plugin_request(self, req):
+        args = list(req.args.keys())
+        if len(args) == 1:
+            param = args[0]
+            plugin = self.plugins.get(param)
+            return plugin
+
     def _path_get(self, req, path):
         # self._log('args = ' + str(req.args))
         if not self.storage.exists(path):
@@ -138,28 +145,6 @@ class DohApp:
             play = req.args.get('play')
             return self._render_dir(path, play=play)
 
-        if 'edit' in req.args:
-            text, e = self.storage.read_text(path)
-            if e:
-                return self.r400(e)
-            args = {
-                'js_links': [
-                    url.codemirror('codemirror.min.js'),
-                    url.codemirror('addon/dialog/dialog.min.js'),
-                    url.codemirror('addon/search/search.min.js'),
-                    url.codemirror('addon/search/searchcursor.min.js')
-                ],
-                'css_links': [
-                    url.codemirror('codemirror.min.css'),
-                    url.codemirror('addon/dialog/dialog.min.css')
-                ],
-                'codemirror_root': url.codemirror(),
-                'text': text,
-                'mimetype': content.guess_mime(path),
-                'path_prefixes': self._prefixes(path),
-                'read_only': not entry.can_write
-            }
-            return flask.render_template('edit.htm', **args)
         if 'see' in req.args:
             mimetype = content.guess_mime(path)
             args = {
@@ -171,24 +156,19 @@ class DohApp:
                 tmpl = 'media.htm'
             return flask.render_template(tmpl, **args)
 
-        args = list(req.args.keys())
-        if len(args) == 1:
-            if args[0] in self.plugins:
-                self._log(args[0] + ' opens ' + path)
-                return self.plugins.render(req, self.storage, path, args[0])
+        plugin = self._is_plugin_request(req)
+        if plugin:
+            self._log('"%s" opens %s' % (plugin.name, path))
+            return plugin.render(req, self.storage, path)
 
         is_dl = 'dl' in req.args.values()
         return self._download(path, octetstream=is_dl)
 
     def _path_post(self, req, path):
-        if 'update' in req.args:
-            self._log('update request for %s:' % path)
-            self._log(req.data)
-            self._log('------------------------------')
-            e = self.storage.write_text(path, req.data)
-            if e:
-                return flask.Response(str(e)), 400
-            return flask.Response("saved"), 200
+        plugin = self._is_plugin_request(req)
+        if plugin:
+            self._log('"%s" opens %s' % (plugin.name, path))
+            return plugin.action(req, self.storage, path)
 
         self._log(req.form)
         actions = req.form.getlist('action')
@@ -266,9 +246,7 @@ class DohApp:
         # entry.shared = shared
 
         entry.open_url = None
-        if entry.is_text():
-            entry.open_url = entry.href + '?edit'
-        elif entry.is_audio():
+        if entry.is_audio():
             dirpath = os.path.dirname(path)
             filename = os.path.basename(path)
             entry.open_url = url.my(dirpath) + '?play=' + filename
