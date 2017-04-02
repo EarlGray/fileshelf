@@ -13,7 +13,12 @@ a, a:visited {
 #page {
   min-width: 30em;
   max-width: 60em;
-  padding: 0 2em;
+}
+@media (max-width: 600px) {
+  #page { padding: 0 0; }
+}
+@media (min-width: 600px) {
+  #page { padding: 0 2em; }
 }
 #addressbar {
   margin: 0;
