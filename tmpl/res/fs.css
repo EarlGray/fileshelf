@@ -1,8 +1,9 @@
-.no-such { color: red; top: 0; }
+.no-such, .error { color: red; top: 0; }
 .hidden { display: none }
 .inline { display: inline-block; }
 .centered { margin: 0 auto; display: block; }
 .pull-right { text-align: right; }
+.pull-center { text-align: center; }
 .small { font-size: 80%; }
 .clearfix { overflow: auto; }
 
