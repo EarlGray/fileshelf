@@ -37,6 +37,7 @@ class EditHandler(content.Handler):
             'text': text,
             'mimetype': content.guess_mime(path),
             'path_prefixes': url.prefixes(path, storage.exists),
+            'user': getattr(flask.request, 'user'),
             'read_only': not entry.can_write
         }
         tmpl = url.join(self.name, 'index.htm')

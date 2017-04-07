@@ -149,6 +149,7 @@ class DohApp:
             mimetype = content.guess_mime(path)
             args = {
                 'file_url': url.my(path),
+                'user': getattr(flask.request, 'user'),
                 'path_prefixes': self._prefixes(path)
             }
             tmpl = 'frame.htm'

@@ -32,10 +32,6 @@
       {% endif -%}
       {% endfor -%}
     </span>
-    <span id="toolbar">
-    {% block toolbar %}
-    {% endblock %}
-    </span>
     {% if user -%}
     <span id="authbar">
       <img src="{{ url_for('static_handler', path='nerdy.png') }}"
@@ -43,6 +39,10 @@
       {{ user }}
     </span>
     {% endif -%}
+    <span id="toolbar">
+    {% block toolbar %}
+    {% endblock %}
+    </span>
     <hr/>
   </div>
   {% block body %}

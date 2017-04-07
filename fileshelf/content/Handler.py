@@ -46,6 +46,7 @@ class Handler:
         self._log('rendering ' + tmpl)
         args = {
             'file_url': url.my(path),
+            'user': getattr(flask.request, 'user'),
             'path_prefixes': url.prefixes(path, storage.exists)
         }
         return flask.render_template(tmpl, **args)
