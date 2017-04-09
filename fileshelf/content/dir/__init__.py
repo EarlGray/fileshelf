@@ -1,11 +1,11 @@
-from fileshelf.content import Handler
+import fileshelf.content as content
 
 
-class DirHandler(Handler):
+class DirHandler(content.Handler):
     def can_handle(self, storage, path):
         if storage.is_dir(path):
-            return Handler.SHOULD
-        return Handler.DOESNT
+            return content.Priority.SHOULD
+        return content.Priority.DOESNT
 
     def render(self, req, storage, path):
         self._log('dir.render(%s)' % path)

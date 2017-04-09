@@ -159,7 +159,7 @@ class DohApp:
 
         plugin = self._is_plugin_request(req)
         if plugin:
-            self._log('"%s" opens %s' % (plugin.name, path))
+            # self._log('"%s" opens %s' % (plugin.name, path))
             return plugin.render(req, self.storage, path)
 
         is_dl = 'dl' in req.args.values()
@@ -168,7 +168,7 @@ class DohApp:
     def _path_post(self, req, path):
         plugin = self._is_plugin_request(req)
         if plugin:
-            self._log('"%s" opens %s' % (plugin.name, path))
+            # self._log('"%s" opens %s' % (plugin.name, path))
             return plugin.action(req, self.storage, path)
 
         self._log(req.form)

@@ -2,7 +2,12 @@ from __future__ import print_function
 
 import os
 import json
-from fileshelf.content import Handler
+import re
+
+import flask
+
+import fileshelf.url as url
+from fileshelf.content.Mimetypes import guess_mime
 
 
 class Plugins:
@@ -87,23 +92,20 @@ class Plugins:
 
     def dispatch(self, storage, path):
         handlers = {
-            Handler.MUST: [],
-            Handler.SHOULD: [],
-            Handler.CAN: []
+            Priority.SHOULD: [],
+            Priority.CAN: []
         }
         for name, plugin in self.plugins.items():
             prio = plugin.can_handle(storage, path)
-            if prio == Handler.DOESNT:
+            if prio == Priority.DOESNT:
                 continue
-            elif prio == Handler.MUST:
+            elif prio == Priority.MUST:
                 return name
-            else:
-                handlers[prio].append(name)
 
-        if handlers[Handler.SHOULD]:
-            return handlers[Handler.SHOULD][0]
-        elif handlers[Handler.CAN]:
-            return handlers[Handler.CAN][0]
+        if handlers[Priority.SHOULD]:
+            return handlers[Priority.SHOULD][0]
+        elif handlers[Priority.CAN]:
+            return handlers[Priority.CAN][0]
         else:
             return None
 
@@ -113,3 +115,73 @@ class Plugins:
             return
         plugin = self.plugins[name]
         return plugin.render(req, storage, path)
+
+
+class Priority:
+    DOESNT = 0
+    CAN = 1
+    SHOULD = 2
+    MUST = 3
+
+    @staticmethod
+    def val(s):
+        if isinstance(s, int):
+            return s
+        if isinstance(s, str):
+            try:
+                return int(s)
+            except ValueError:
+                return getattr(Priority, s)
+
+
+class Handler:
+    def __init__(self, name, conf):
+        """
+        `name` is the name of this plugin and its directory
+        `conf` is a config dict (maybe read from `plugin.json`)
+        """
+        self.name = name
+        self.conf = conf
+
+    def can_handle(self, storage, path):
+        """ return content handler priority for `path`: DOESNT/CAN/SHOULD/MUST
+        """
+
+        extensions = self.conf.get('extensions')
+        if extensions:
+            _, ext = os.path.splitext(path)
+            ext = ext.strip('.')
+            # self._log('Handler.can_handle .' + ext)
+            if ext in extensions:
+                return Priority.val(extensions[ext])
+
+        mime_conf = self.conf.get('mime_regex')
+        mime = guess_mime(path)
+        if mime_conf and mime:
+            assert isinstance(mime_conf, dict)
+            for regex, prio in mime_conf.items():
+                if re.match(regex, mime):
+                    return Priority.val(prio)
+
+        return Priority.DOESNT
+
+    def render(self, req, storage, path):
+        """ handles GET requests """
+        self._log('Handler.render(%s)' % path)
+
+        tmpl = url.join(self.name, 'index.htm')
+        self._log('rendering ' + tmpl)
+        args = {
+            'file_url': url.my(path),
+            'user': getattr(flask.request, 'user'),
+            'path_prefixes': url.prefixes(path, storage.exists)
+        }
+        return flask.render_template(tmpl, **args)
+
+    def action(self, req, storage, path):
+        """ handles POST requests, to override """
+        raise NotImplementedError('Handler.action')
+
+    def _log(self, *msgs):
+        print('## Plugin[%s]: ' % self.name, end='')
+        print(*msgs)

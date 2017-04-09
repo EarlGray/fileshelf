@@ -13,8 +13,8 @@ class EditHandler(content.Handler):
     def can_handle(self, storage, path):
         entry = storage.file_info(path)
         if entry.is_text():
-            return content.Handler.CAN
-        return content.Handler.DOESNT
+            return content.Priority.CAN
+        return content.Priority.DOESNT
 
     def render(self, req, storage, path):
         entry = storage.file_info(path)

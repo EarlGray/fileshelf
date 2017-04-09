@@ -1,0 +1,13 @@
+{% extends 'tmpl.htm' %}
+
+{% block style %}
+<style id="img-css">
+#img-file {
+  box-shadow: 0 0 1em black;
+}
+</style>
+{% endblock %}
+
+{% block body %}
+<img id="img-file" src="{{ file_url }}"/>
+{% endblock %}
