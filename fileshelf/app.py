@@ -253,6 +253,13 @@ class DohApp:
             entry.open_url = url.my(dirpath) + '?play=' + filename
         elif entry.is_viewable():
             entry.open_url = entry.href + '?see'
+        else:
+            entry.open_url = entry.href
+
+            plugin = self.plugins.dispatch(self.storage, path)
+            # self._log('"%s" renders %s' % (plugin, path))
+            if plugin and plugin != 'dir':
+                entry.open_url += '?' + plugin
 
         return entry
 
@@ -302,14 +309,6 @@ class DohApp:
             for fname in self.storage.list_dir(path):
                 file_path = url.join(path, fname)
                 entry = self.file_info(file_path)
-
-                if not entry.open_url:
-                    entry.open_url = entry.href
-
-                    plugin = self.plugins.dispatch(self.storage, file_path)
-                    # self._log('"%s" renders %s' % (plugin, file_path))
-                    if plugin and plugin != 'dir':
-                        entry.open_url += '?' + plugin
 
                 lsfile = {
                     'name': fname,

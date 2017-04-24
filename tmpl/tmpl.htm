@@ -20,7 +20,7 @@
 </head>
 <body>
 <div id="page" class="centered">
-  <div id="header">
+  <div id="header" class="clearfix">
     <span id="addressbar" class="inline">
       <a href="{{ url_for('path_handler') }}" class="dir-link" tabindex="1">FS:</a>
       {% if not path_prefixes -%} / {% endif -%}
@@ -41,10 +41,12 @@
     {% endif -%}
     <span id="toolbar">
     {% block toolbar %}
+    <a href="{{ file_url }}"><button id="row-btn" class="tb-btn">raw</button></a>
+    <a href="{{ file_url }}?dl"><button id="dl-btn" class="tb-btn">download</button></a>
     {% endblock %}
     </span>
-    <hr/>
   </div>
+  <hr/>
   {% block body %}
   {% endblock %}
 </div>

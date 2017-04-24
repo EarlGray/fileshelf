@@ -92,16 +92,12 @@ class LocalStorage:
 
         entry.mimetype = content.guess_mime(path)
 
-        def is_text():
-            return entry.mimetype and entry.mimetype.startswith('text/')
-
         def is_audio():
             return entry.mimetype and entry.mimetype.startswith('audio/')
 
         def is_viewable():
             return entry.mimetype and entry.mimetype in ['application/pdf']
 
-        entry.is_text = is_text
         entry.is_audio = is_audio
         entry.is_viewable = is_viewable
 

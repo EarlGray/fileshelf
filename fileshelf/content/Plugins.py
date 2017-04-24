@@ -99,15 +99,15 @@ class Plugins:
             prio = plugin.can_handle(storage, path)
             if prio == Priority.DOESNT:
                 continue
-            elif prio == Priority.MUST:
+            if prio == Priority.MUST:
                 return name
+            handlers[prio].append(name)
 
         if handlers[Priority.SHOULD]:
             return handlers[Priority.SHOULD][0]
         elif handlers[Priority.CAN]:
             return handlers[Priority.CAN][0]
-        else:
-            return None
+        return None
 
     def render(self, req, storage, path, name=None):
         name = name or self.dispatch(storage, path)

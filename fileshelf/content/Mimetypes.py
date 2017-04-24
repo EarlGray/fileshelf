@@ -1,17 +1,22 @@
 import mimetypes
 
 
+# TODO: make it an external file
 mime_by_extension = {
-    'org': 'text/x-org',
-    'scm': 'text/x-scheme',
+    'Makefile': 'text/x-makefile',
+
     'erl': 'text/x-erlang',
-    'rb': 'text/x-ruby',
-    'sh': 'text/x-shell',
     'hs': 'text/x-haskell',
+    'ini': 'text/x-ini',
     'lhs': 'text/x-haskell',
     'md': 'text/markdown',
+    'org': 'text/x-org',
+    'rb': 'text/x-ruby',
+    'rs': 'text/x-rust',
+    'scala': 'text/x-scala',
+    'scm': 'text/x-scheme',
+    'sh': 'text/x-shell',
     'tex': 'text/x-latex',
-    'Makefile': 'text/x-makefile',
 
     # non-text:
     'ipynb': 'application/ipynb',

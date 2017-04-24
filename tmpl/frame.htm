@@ -31,8 +31,7 @@
 
 {% block toolbar %}
 <button id="fullscr-btn" class="hidden tb-btn">fullscreen</button>
-<a href="{{ file_url }}"><button id="row-btn" class="tb-btn">raw</button></a>
-<a href="{{ file_url }}?dl"><button id="dl-btn" class="tb-btn">download</button></a>
+{{ super() }}
 {% endblock %}
 
 {% block body %}
