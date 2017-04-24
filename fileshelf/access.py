@@ -61,6 +61,7 @@ class AuthChecker:
             else:
                 raise AuthError('unknown auth type: ' + self.auth)
 
+            path = path.encode('latin1').decode('utf8')
             self._log('%s %s://%s@%s%s?%s' %
                       (req.method, req.environ['wsgi.url_scheme'],
                        user, req.environ['HTTP_HOST'], path,
