@@ -12,7 +12,7 @@ def codemirror_path(path=None):
 class EditHandler(content.Handler):
     def can_handle(self, storage, path):
         entry = storage.file_info(path)
-        if entry.is_text():
+        if entry.mimetype and entry.mimetype.startswith('text/'):
             return content.Priority.CAN
         return content.Priority.DOESNT
 

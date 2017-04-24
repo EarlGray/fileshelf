@@ -1,3 +1,174 @@
+var editorModes = {
+    clike: {
+        desc: 'C-like',
+        mime: 'text/css',
+        fext: 'c,cc,cpp,java,scala'
+    },
+    css: {
+        desc: 'CSS',
+        fext: 'css'
+    },
+    diff: {
+        desc: 'Diff',
+        fext: 'diff,patch'
+    },
+    erlang: {
+        desc: 'Erlang',
+        fext: 'erl'
+    },
+    forth: {
+        desc: 'Forth',
+        fext: 'f'
+    },
+    gas: {
+        desc: 'GNU assembly',
+        fext: 'S,s,asm'
+    },
+    go: {
+        desc: 'Go',
+        fext: 'go'
+    },
+    groovy: {
+        desc: 'Groovy',
+        fext: 'groovy'
+    },
+    haskell: {
+        desc: 'Haskell',
+        fext: 'hs,lhs'
+    },
+    javascript: { desc: 'Javascript',
+        mime: "application/javascript",
+        fext: "js"
+    },
+    jinja2: {
+        desc: 'Jinja2'
+    },
+    lua: {
+        desc: 'Lua',
+        fext: 'lua'
+    },
+    markdown: {
+        desc: 'Markdown',
+        fext: "md,markdown"
+    },
+    mbox: {
+        desc: 'mbox',
+        fext: "mbox"
+    },
+    mllike: {
+        desc: 'Ocaml/SML',
+        fext: "ml"
+    },
+    perl: {
+        desc: 'Perl',
+        fext: "pl,pm"
+    },
+    php: {
+        desc: 'PHP',
+        fext: "php"
+    },
+    powershell: {
+        desc: 'Powershell',
+        fext: "ps1"
+    },
+    python: {
+        desc: 'Python',
+        mime: "text/x-python",
+        fext: 'py',
+    },
+    r: {
+        desc: 'R',
+        fext: "r"
+    },
+    ruby: {
+        desc: 'Ruby',
+        fext: "rb"
+    },
+    rust: {
+        desc: 'Rust',
+        fext: "rs"
+    },
+    scheme: {
+        desc: 'Scheme',
+        fext: "scm"
+    },
+    shell: {
+        desc: 'shell',
+        mime: "text/x-sh",
+        fext: "sh,bash"
+    },
+    sql: {
+        desc: 'SQL',
+        fext: "sql"
+    },
+    swift: {
+        desc: 'Swift',
+        fext: "swift"
+    },
+    stex: {
+        desc: 'Tex, Latex',
+        fext: "tex",
+        src:  "https://codemirror.net/mode/stex/stex.js",
+    },
+    troff: {
+        desc: 'Troff',
+        fext: "tr"
+    },
+    verilog: {
+        desc: 'Verilog',
+        fext: "v"
+    },
+    vue: {
+        desc: 'Vue.js',
+        fext: "vue"
+    },
+    xml: {
+        desc: 'XML, HTML',
+        mime: "application/xml",
+        fext: "xml,htm,html"
+    },
+    yaml: {
+        desc: 'YAML',
+        fext: "yaml"
+    },
+};
+
+(function (modes) {
+  var selectMode = document.querySelector('#editor-mode');
+  for (var m in modes) {
+    var mode = modes[m];
+    var opt = document.createElement('option');
+    opt.value = m; opt.innerText = mode.desc;
+    if ('mime' in mode) { opt.setAttribute('data-mime', mode['mime']); }
+    if ('fext' in mode) { opt.setAttribute('data-fext', mode['fext']); }
+    if ('src'  in mode) { opt.setAttribute('data-src',  mode['src']); }
+    selectMode.appendChild(opt);
+  }
+})(editorModes);
+
+var editorFonts = [
+    "PT Mono",
+    "Menlo",
+    "Droid Mono",
+    "Courier New",
+    "Liberation Mono",
+];
+
+(function (fonts) {
+  var selectFont = document.querySelector('#editor-font');
+  for (var i = 0; i < fonts.length; ++i) {
+    var opt = document.createElement('option');
+    opt.value = opt.innerText = fonts[i];
+    selectFont.appendChild(opt);
+  }
+})(editorFonts);
+/*
+  <option value="PT Mono">PT Mono</option>
+  <option value="Menlo">Menlo</option>
+  <option value="Courier New">Courier New</option>
+  <option value="Liberation Mono">Liberation Mono</option>
+*/
+
 var the_editor;
 var textarea = document.querySelector('#text-editor');
 

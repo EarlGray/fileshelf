@@ -11,12 +11,25 @@
 }
 #editor-settings select {
   margin-right: 3em;
-  position: fixed;
 }
 #settings-container {
   margin: 0 1em;
-  float: right;
 }
+#settings-container[open] {
+}
+
+#editor-settings table {
+  border-collapse: collapse;
+}
+.settings-labels {
+  text-align: right;
+  padding: 0 0.5em 0 1em;
+}
+.settings-controls {
+  height: 1.5em;
+  border-right: 1px solid black;
+}
+
 .CodeMirror {
   border: 1px solid #888;
 }
@@ -39,6 +52,7 @@
   {#<button id="view-btn" class="tb-btn" disabled>View</button>#}
   <button id="save-btn" class="tb-btn" disabled>Save</button>
   <label id="settings-lbl" for="settings-btn" class="tb-btn">Settings</label>
+  {{ super() }}
 </span>
 {% endblock %}
 
@@ -48,96 +62,74 @@
 </noscript>
 
 <details id="settings-container">
-  <summary id="settings-summary">
-    <button id="settings-btn" class="hidden">Settings</button>
+  <summary id="settings-summary" class="hidden">
+    <button id="settings-btn" class="">Settings</button>
   </summary>
   <div id="editor-settings">
-    <p>
-    <label for="editor-keymap">Keymap:</label>
-    <select id="editor-keymap">
-      <option value="vim" selected>vim</option>
-      <option value="emacs">emacs</option>
-      <option value="sublime">sublime</option>
-    </select>
+    <table>
+      <tbody>
+        <tr>
+          <td class="settings-labels">
+            <label for="editor-keymap">Keymap:</label>
+          </td>
+          <td class="settings-controls">
+            <div>
+            <select id="editor-keymap">
+              <option value="vim" selected>vim</option>
+              <option value="emacs">emacs</option>
+              <option value="sublime">sublime</option>
+            </select>
+            </div>
+          </td>
 
-    <p>
-    <label for="editor-mode">Mode:</label>
-    <select id="editor-mode">
-      <option value="" selected>Select mode...</option>
-      <!--option value="apl">APL</option-->
-      <option value="clike" data-fext="c,cc,cpp,java,scala">C-like</option>
-      <option value="css" data-fext="css" data-mime="text/css">CSS</option>
-      <option value="diff" data-fext="diff,patch">Diff</option>
-      <option value="erlang" data-fext="erl">Erlang</option>
-      <option value="forth" data-fext="f">Forth</option>
-      <option value="gas" data-fext="S,s,asm">GNU assembly</option>
-      <option value="go" data-fext="go">Go</option>
-      <option value="groovy" data-fext="groovy">Groobvy</option>
-      <option value="haskell-literate" data-fext="lhs">Haskell (literate)</option>
-      <option value="haskell" data-fext="hs">Haskell</option>
-      <!--option value="haxe">Haxe</option-->
-      <!--option value="htmlmixed" data-mime="text/html" data-fext="htm,html">HTML</option-->
-      <option value="javascript" data-mime="application/javascript" data-fext="js">Javascript</option>
-      <option value="jinja2">Jinja2</option>
-      <!--option value="julia">Julia</option-->
-      <option value="lua" data-fext="lua">Lua</option>
-      <option value="markdown" data-fext="md,markdown">Markdown</option>
-      <option value="mbox" data-fext="mbox">mbox</option>
-      <option value="mllike" data-fext="ml">Ocaml/SML</option>
-      <option value="perl" data-fext="pl,pm">Perl</option>
-      <option value="php" data-fext="php">PHP</option>
-      <option value="powershell" data-fext="ps1">Powershell</option>
-      <!--option value="protobuf">Protobuf</option-->
-      <!--option value="puppet">Puppet</option-->
-      <option value="python" data-mime="text/x-python">Python</option>
-      <option value="r" data-fext="r">R</option>
-      <option value="ruby" data-fext="rb">Ruby</option>
-      <option value="rust" data-fext="rs">Rust</option>
-      <option value="scheme" data-fext="scm">Scheme</option>
-      <option value="shell" data-mime="text/x-sh" data-fext="sh">shell</option>
-      <option value="sql" data-fext="sql">SQL</option>
-      <option value="stex" data-fext="tex"
-          data-src="https://codemirror.net/mode/stex/stex.js">Tex, Latex</option>
-      <option value="swift" data-fext="swift">Swift</option>
-      <option value="troff" data-fext="tr">Troff</option>
-      <option value="verilog" data-fext="v">Verilog</option>
-      <option value="vue" data-fext="vue">Vue.js</option>
-      <option value="xml" data-mime="application/xml" data-fext="xml,htm,html">XML, HTML</option>
-      <option value="yaml" data-fext="yaml">YAML</option>
-    </select>
+          <td class="settings-labels">
+            <label>Show line numbers:</label>
+          </td>
+          <td class="settings-controls">
+            <input id="editor-line-numbers" type="checkbox">
+          </td>
 
-    {#<p>
-    <!-- TODO -->
-    <label for="select">Tabsize</label>
-    <select id="editor-tabsize">
-      <option value="2">2</option>
-      <option value="4" selected>4</option>
-      <option value="8">8</option>
-    </select>#}
+          <td class="settings-labels">
+            <label for="editor-font-size">Font size:</label>
+          </td>
+          <td class="settings-controls">
+            <input id="editor-font-size" type="number" min="7" max="36" value="10">
+          </td>
+        </tr>
 
-    <p>
-    <label>Show line numbers:&nbsp;</label><input id="editor-line-numbers" type="checkbox">
+        <tr>
+          <td class="settings-labels">
+            <label for="editor-mode">Mode:</label>
+          </td>
+          <td class="settings-controls">
+            <select id="editor-mode">
+              <option value="" selected>Select mode...</option>
+            </select>
+          </td>
 
-    <p>
-    <label>Line wrap:&nbsp;</label><input id="editor-wrap-lines" type="checkbox">
+          <td class="settings-labels">
+            <label>Line wrap:</label>
+          </td>
+          <td class="settings-controls">
+            <input id="editor-wrap-lines" type="checkbox">
+          </td>
 
-    <hr>
-    <p>
-    <label for="editor-font">Font family:</label>
-    <select id="editor-font">
-      <option value="monospace" selected>monospace</option>
-      <option value="sans">sans</option>
-      <option value="serif">serif</option>
-      <option value="PT Mono">PT Mono</option>
-      <option value="Menlo">Menlo</option>
-      <option value="Courier New">Courier New</option>
-      <option value="Liberation Mono">Liberation Mono</option>
-    </select>
+          <td class="settings-labels">
+            <label for="editor-font">Font family:</label>
+          </td>
+          <td class="settings-controls">
+            <select id="editor-font">
+              <option value="monospace" selected>monospace</option>
+              <option value="sans">sans</option>
+              <option value="serif">serif</option>
+            </select>
+          </td>
+        </tr>
 
-    <p>
-    <label for="editor-font-size">Font size:</label>
-    <input id="editor-font-size" type="number" min="7" max="36" value="10">
-
+        <tr>
+        </tr>
+      </tbody>
+    </table>
   </div>
 </details>
 <textarea id="text-editor" cols="90" rows="150"
