@@ -194,11 +194,11 @@ tr[data-hidden] { opacity: 0.55; }
                name="file" value="{{ entry.name }}" form="dir-actions"/>
       </td>
     </tr>
-    {% if entry.play -%}
+    {% if entry.play_url -%}
     <tr class="entry-row entry-play">
       <td class="entry-icon"></td>
       <td class="entry-name">
-        <audio id="play-audio" src="{{ entry.href }}" class="focusable" autoplay="true" controls>No sound :(</audio>
+        <audio id="play-audio" src="{{ entry.play_url }}" class="focusable" autoplay="true" controls>No sound :(</audio>
       </td>
       <td class="entry-ctime">&#8617;</td>
       <td class="entry-size"></td>

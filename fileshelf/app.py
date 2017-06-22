@@ -330,8 +330,17 @@ class DohApp:
                 else:
                     lsfile['icon_src'] = 'file-icon'
                     lsfile['icon_alt'] = '-'
+
                 if fname == play:
-                    lsfile['play'] = True
+                    lsfile['play_url'] = entry.href
+                    if entry.href.endswith('.m3u'):
+                        u, e = self.storage.read_text(file_path)
+                        if e:
+                            raise e
+                        for line in u.splitlines():
+                            if not line.startswith('#'):
+                                lsfile['play_url'] = line
+                                break
 
                 if entry.can_rename:
                     lsfile['rename_url'] = url.my(path) + '?rename=' + fname
