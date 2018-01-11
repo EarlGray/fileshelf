@@ -43,3 +43,24 @@ $ docker-compose up
 ```
 
 and check [http://localhost:8021](http://localhost:8021)
+
+## Configuration
+
+FileShelf can take a configuration file as a parameter:
+
+```
+$ python index.py conf.json
+```
+
+Configuration options are listed here: [fileshelf/app.py#L19](https://github.com/EarlGray/fileshelf/blob/master/fileshelf/app.py#L19)
+
+An example of simple configuration:
+
+```json
+{
+    "host": "0.0.0.0",
+    "port": 8021,
+    "debug": true,
+    "storage_dir": "~/fileshelf"
+}
+```
