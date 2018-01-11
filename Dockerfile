@@ -1,4 +1,4 @@
-FROM python:3.6-slim-stretch
+FROM python:3.6-alpine
 LABEL maintainer="dmytrish@gmail.com"
 
 ADD fileshelf /usr/app/fileshelf/
