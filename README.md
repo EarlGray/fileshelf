@@ -31,3 +31,15 @@ $ . v3nv/bin/activate
 (v3nv)$ pip install -r requirements.txt
 (v3nv)$ python index.py
 ```
+
+Now check [http://localhost:8021](http://localhost:8021)
+
+## Docker
+
+Inside this repository directory (or just use the supplied [docker-compose.yml](docker-compose.yml)):
+
+```sh
+$ docker-compose up
+```
+
+and check [http://localhost:8021](http://localhost:8021)
