@@ -32,7 +32,7 @@ $ . v3nv/bin/activate
 (v3nv)$ python index.py
 ```
 
-Now check [http://localhost:8021](http://localhost:8021)
+Now check [http://localhost:8021](http://localhost:8021). The directory `storage` is served by default.
 
 ## Docker
 
