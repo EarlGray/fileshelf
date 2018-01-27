@@ -17,6 +17,10 @@ class Plugins:
         self.conf = conf
         self.plugins = {}
 
+        self._add_from_directory(plugins_dir)
+
+
+    def _add_from_directory(self, plugins_dir):
         for name, Plugin, conf in Plugins._scan(plugins_dir):
             try:
                 plugin = Plugin(name, conf)
@@ -28,6 +32,7 @@ class Plugins:
             except Exception as e:
                 self._log('init error: plugin ' + name)
                 self._log(e)
+
 
     def _init(self, plugins_dir, name):
         """ initializes directories for the plugin `name` """

@@ -2,16 +2,16 @@
 
 set -e
 
-cd "`dirname $0`"
+export APPDIR="`dirname $0`"
 
 if which virtualenv >/dev/null ; then
-  if ! test -d ./v3nv ; then
-    virtualenv -p python3 v3nv
-    ./v3nv/bin/pip install -r requirements.txt
+  if ! test -d $APPDIR/v3nv ; then
+    virtualenv -p python3 $APPDIR/v3nv
+    $APPDIR/v3nv/bin/pip install -r $APPDIR/requirements.txt
   fi
-  . ./v3nv/bin/activate
+  . $APPDIR/v3nv/bin/activate
 else
   echo "WARN: virtualenv not found, trying to use system libraries..." >&2
 fi
 
-exec ./index.py "$@"
+exec $APPDIR/index.py "$@"

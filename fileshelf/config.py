@@ -1,4 +1,5 @@
 import os
+import sys
 import json
 
 from pathlib import Path
@@ -34,8 +35,8 @@ def default(appdir):
     }
 
 
-def from_arguments():
-    conf = {}
+def from_arguments(appdir=None):
+    conf = default(appdir or os.getcwd())
 
     ap = ArgumentParser()
     ap.add_argument("-c", "--config",
@@ -56,7 +57,7 @@ def from_arguments():
 
     # override config if options are specified:
     if args.directory:
-        if Path(args.directory).exists():
+        if Path(args.directory).expanduser().absolute().exists():
             conf['storage_dir'] = args.directory
         else:
             print("Directory not found: %s" % args.directory, file=sys.stderr)

@@ -17,12 +17,8 @@ from fileshelf.config import default as default_conf
 
 
 class DohApp:
-    def __init__(self, config):
-        self.app_dir = config.get('app_dir', os.getcwd())
-
-        conf = default_conf(self.app_dir)
-        conf.update(config)
-
+    def __init__(self, conf):
+        self.app_dir = conf['app_dir']
         template_dir = conf['template_dir']
 
         app = Flask(__name__, template_folder=template_dir)
