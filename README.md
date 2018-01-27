@@ -2,7 +2,7 @@
 
 FileShelf is a simple web-based file manager:
 
-![fs.png](static/fs.png?raw=true)
+![fs.png](storage/fs.png?raw=true)
 
 ## Features
 
