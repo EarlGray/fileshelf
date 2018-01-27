@@ -1,12 +1,15 @@
 import os
+import json
+
 from pathlib import Path
 from argparse import ArgumentParser
+
 
 def default(appdir):
     return {
         # host and port to listen on:
         'host': '127.0.0.1',
-        'port': 5000,
+        'port': 8021,
 
         # modes:
         'debug': False,
