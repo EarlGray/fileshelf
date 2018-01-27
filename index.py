@@ -1,15 +1,12 @@
-import json
+#!/usr/bin/env python3
 
 import sys
+import json
 
-from fileshelf import DohApp
+from fileshelf import DohApp, config
 
 if __name__ == '__main__':
-    conf = {}
-    if len(sys.argv) > 1:
-        with open(sys.argv[1]) as f:
-            uconf = json.load(f)
-            conf.update(uconf)
+    conf = config.from_arguments()
 
     app = DohApp(conf)
     app.run()

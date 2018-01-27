@@ -11,7 +11,7 @@ WORKDIR /usr/app
 RUN pip install -r requirements.txt
 RUN ln -s /storage
 
-ENTRYPOINT python index.py /etc/fileshelf.conf
+ENTRYPOINT python index.py -c /etc/fileshelf.conf
 VOLUME /storage
 VOLUME /etc/fileshelf.conf
 EXPOSE 8021:8021/tcp

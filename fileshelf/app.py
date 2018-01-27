@@ -13,36 +13,7 @@ import fileshelf.url as url
 import fileshelf.content as content
 from fileshelf.access import AuthChecker, UserDb
 from fileshelf.rproxy import ReverseProxied
-
-
-def default_conf(appdir):
-    return {
-        # host and port to listen on:
-        'host': '127.0.0.1',
-        'port': 5000,
-
-        # modes:
-        'debug': False,
-
-        # directories:
-        'app_dir': appdir,
-        'data_dir': os.path.join(appdir, 'data'),
-        'static_dir': os.path.join(appdir, 'static'),
-        'storage_dir': os.path.join(appdir, 'storage'),  # without users
-        'template_dir': os.path.join(appdir, 'tmpl'),
-
-        # users:
-        'multiuser': False,
-        'auth': None,           # null, 'basic'
-        'auth_realm': None,     # basic auth realm
-        'auth_htpasswd': None,  # data/htpasswd.db by default
-        'auth_https_only': False,
-
-        # used to offload large static files to a static server (nginx):
-        'offload_dir': None,
-        'offload_path': None,
-
-    }
+from fileshelf.config import default as default_conf
 
 
 class DohApp:
