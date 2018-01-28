@@ -22,7 +22,7 @@
 <div id="page" class="centered">
   <div id="header" class="clearfix">
     <span id="addressbar" class="inline">
-      <a href="{{ url_for('path_handler') }}" class="dir-link" tabindex="1">FS:</a>
+      <a href="{{ url_for('path_handler') }}" class="dir-link" tabindex="1" accesskey="/" title="Access + /">FS:</a>
       {% if not path_prefixes -%} / {% endif -%}
       {% for pre in path_prefixes -%}
       {% if pre.href -%}
