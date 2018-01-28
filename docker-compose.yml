@@ -1,9 +1,9 @@
 version: "3"
 services:
-    fileshelf:
-        image: dmytrish/fileshelf:latest
-        container_name: fileshelf
-        ports: ['8021:8021/tcp']
-        volumes:
-            - $PWD/storage:/storage
-            - $PWD/conf_dev.json:/etc/fileshelf.conf
+  fileshelf:
+    image: dmytrish/fileshelf:latest
+    container_name: fileshelf
+    ports: ['8021:8021/tcp']
+    volumes:
+      - $PWD/storage:/storage
+      - $PWD/conf_dev.json:/etc/fileshelf.conf
