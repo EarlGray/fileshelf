@@ -2,7 +2,7 @@
 
 import sys
 
-from fileshelf import DohApp, config
+from fileshelf import FileShelf, config
 
 if __name__ == '__main__':
     from pathlib import Path
@@ -14,5 +14,5 @@ if __name__ == '__main__':
     if not conf.get('multiuser'):
         print("Serving:", conf['storage_dir'], file=sys.stderr)
 
-    app = DohApp(conf)
+    app = FileShelf(conf)
     app.run()

@@ -1,7 +1,6 @@
-import flask
-
 import fileshelf.url as url
 import fileshelf.content as content
+import fileshelf.response as resp
 
 
 def codemirror_path(path=None):
@@ -37,12 +36,12 @@ class EditHandler(content.Handler):
             'text': text,
             'mimetype': content.guess_mime(path),
             'path_prefixes': url.prefixes(path, storage.exists),
-            'user': getattr(flask.request, 'user'),
+            'user': getattr(req, 'user'),
             'read_only': not entry.can_write
         }
         tmpl = url.join(self.name, 'index.htm')
         self._log('rendering ' + tmpl)
-        return flask.render_template(tmpl, **args)
+        return resp.RenderTemplate(tmpl, args)
 
     def action(self, req, storage, path):
         actlist = req.args.getlist(self.name)
@@ -50,11 +49,13 @@ class EditHandler(content.Handler):
 
         if 'update' in actlist:
             self._log('update request for %s:' % path)
-            self._log(req.data)
-            self._log('------------------------------')
+            # self._log(req.data)
+            # self._log('------------------------------')
             e = storage.write_text(path, req.data)
             if e:
-                return flask.Response(str(e)), 400
-            return flask.Response("saved"), 200
+                return resp.RequestError(str(e))
+            return resp.Response("saved")
 
-        return super().action(req, storage, path)
+        return resp.RequestError('unknown POST: ' + str(req.args))
+
+__all__ = [EditHandler]

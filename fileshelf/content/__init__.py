@@ -1,7 +1,8 @@
-import time
+from .Mimetypes import guess_mime
 
-from fileshelf.content.Plugins import Plugins, Priority, Handler
-from fileshelf.content.Mimetypes import guess_mime
+from .Plugins import Plugins, Priority, Handler
+
+import time
 
 
 def smart_time(tm):
@@ -24,4 +25,7 @@ def smart_time(tm):
     return t + time.strftime(', %x', tm)
 
 
-__all__ = [guess_mime, smart_time, Handler, Plugins, Priority]
+__all__ = [
+    guess_mime, smart_time,
+    Handler, Plugins, Priority,
+]

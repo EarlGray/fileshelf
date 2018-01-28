@@ -344,7 +344,8 @@ window.onload = function () {
 
   var keymap = selectKeymap.selectedOptions[0].value;
   if (window.localStorage) {
-    keymap = localStorage.getItem('fileshelf/edit/keymap');
+    var saved = localStorage.getItem('fileshelf/edit/keymap');
+    if (saved) { keymap = saved; }
   }
   console.log('selected keymap: ' + keymap);
   selectKeymap.onchange();
@@ -391,18 +392,36 @@ window.onload = function () {
   /* show line numbers */
   var checkLineNumbers = $('input#editor-line-numbers');
   var toggleLineNumbers = function () {
-    the_editor.setOption('lineNumbers', checkLineNumbers.checked);
+    var checked = checkLineNumbers.checked;
+    the_editor.setOption('lineNumbers', checked);
+    if (window.localStorage) {
+      localStorage.setItem('fileshelf/edit/linenum', checked ? 'on' : 'off');
+    }
   };
   checkLineNumbers.checked = true;
+  if (window.localStorage) {
+    if (localStorage.getItem('fileshelf/edit/linenum') === 'off') {
+      checkLineNumbers.checked = false;
+    }
+  }
   checkLineNumbers.onchange = toggleLineNumbers;
   checkLineNumbers.onchange();
 
   /* line wrap */
   var checkLineWrap = $('input#editor-wrap-lines');
   checkLineWrap.onchange = function () {
-    the_editor.setOption('lineWrapping', checkLineWrap.checked);
+    var checked = checkLineWrap.checked;
+    the_editor.setOption('lineWrapping', checked);
+    if (window.localStorage) {
+      localStorage.setItem('fileshelf/edit/linewrap', checked ? 'on':'off');
+    }
   };
   checkLineWrap.checked = true;
+  if (window.localStorage) {
+    if (localStorage.getItem('fileshelf/edit/linewrap') === 'off') {
+      checkLineWrap.checked = false;
+    }
+  }
   checkLineWrap.onchange();
 
   /* resize */

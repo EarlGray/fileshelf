@@ -4,10 +4,9 @@ import os
 import json
 import re
 
-import flask
-
 import fileshelf.url as url
-from fileshelf.content.Mimetypes import guess_mime
+import fileshelf.response as resp
+from .Mimetypes import guess_mime
 
 
 class Plugins:
@@ -18,7 +17,6 @@ class Plugins:
         self.plugins = {}
 
         self._add_from_directory(plugins_dir)
-
 
     def _add_from_directory(self, plugins_dir):
         for name, Plugin, conf in Plugins._scan(plugins_dir):
@@ -32,7 +30,6 @@ class Plugins:
             except Exception as e:
                 self._log('init error: plugin ' + name)
                 self._log(e)
-
 
     def _init(self, plugins_dir, name):
         """ initializes directories for the plugin `name` """
@@ -96,6 +93,7 @@ class Plugins:
         return self.plugins.get(name, default)
 
     def dispatch(self, storage, path):
+        self._log('dispatch(%s)' % path)
         handlers = {
             Priority.SHOULD: [],
             Priority.CAN: []
@@ -140,13 +138,15 @@ class Priority:
 
 
 class Handler:
+    conf = {}
+
     def __init__(self, name, conf):
         """
         `name` is the name of this plugin and its directory
         `conf` is a config dict (maybe read from `plugin.json`)
         """
         self.name = name
-        self.conf = conf
+        self.conf.update(conf)
 
     def can_handle(self, storage, path):
         """ return content handler priority for `path`: DOESNT/CAN/SHOULD/MUST
@@ -156,14 +156,15 @@ class Handler:
         if extensions:
             _, ext = os.path.splitext(path)
             ext = ext.strip('.')
-            # self._log('Handler.can_handle .' + ext)
+            # self._log('Handler.can_handle: extension .' + ext)
             if ext in extensions:
                 return Priority.val(extensions[ext])
 
         mime_conf = self.conf.get('mime_regex')
-        mime = guess_mime(path)
-        if mime_conf and mime:
+        if mime_conf:
             assert isinstance(mime_conf, dict)
+            mime = 'fs/dir' if storage.is_dir(path) else guess_mime(path)
+            self._log('"%s" :: %s' % (path, mime))
             for regex, prio in mime_conf.items():
                 if re.match(regex, mime):
                     return Priority.val(prio)
@@ -178,14 +179,15 @@ class Handler:
         self._log('rendering ' + tmpl)
         args = {
             'file_url': url.my(path),
-            'user': getattr(flask.request, 'user'),
+            'user': getattr(req, 'user'),
             'path_prefixes': url.prefixes(path, storage.exists)
         }
-        return flask.render_template(tmpl, **args)
+        return resp.RenderTemplate(tmpl, args)
 
     def action(self, req, storage, path):
         """ handles POST requests, to override """
-        raise NotImplementedError('Handler.action')
+        msg = '%s.action() is not implemented' % self.name
+        raise NotImplementedError(msg)
 
     def _log(self, *msgs):
         print('## Plugin[%s]: ' % self.name, end='')

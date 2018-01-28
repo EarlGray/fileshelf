@@ -4,6 +4,9 @@ import stat
 import uuid
 import errno
 import shutil
+import uuid
+
+from werkzeug.utils import secure_filename
 
 import fileshelf.url as url
 import fileshelf.content as content
@@ -33,7 +36,7 @@ class LocalStorage:
         return os.path.join(self.storage_dir, *args)
 
     def _log(self, msg):
-        print('STORAGE: ' + msg)
+        print('## LocalStorage: ' + msg)
 
     def make_dir(self, path):
         path = self._fullpath(path)
@@ -85,6 +88,8 @@ class LocalStorage:
         fpath = os.path.join(self.storage_dir, path)
 
         def entry(): return 0
+        entry.path = path
+        entry.fpath = fpath
 
         st = os.lstat(fpath)
         entry.size = st.st_size
@@ -250,3 +255,14 @@ class LocalStorage:
             return (tmp_url, None)
         except (OSError, IOError) as e:
             return (None, e)
+
+    def mktemp(self, fname=None):
+        tmp_dir = os.path.join(self.data_dir, 'tmp')
+        if not os.path.exists(tmp_dir):
+            os.mkdir(tmp_dir)
+        _id = str(uuid.uuid1())
+        if fname:
+            fname = _id + '.' + secure_filename(fname)
+        else:
+            fname = _id
+        return os.path.join(tmp_dir, fname)
