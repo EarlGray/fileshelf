@@ -50,8 +50,8 @@
 {% block toolbar %}
 <span id="editor-commands">
   {#<button id="view-btn" class="tb-btn" disabled>View</button>#}
-  <button id="save-btn" class="tb-btn" disabled>Save</button>
-  <label id="settings-lbl" for="settings-btn" class="tb-btn">Settings</label>
+  <button id="save-btn" class="tb-btn" disabled accesskey="s">save</button>
+  <label id="settings-lbl" for="settings-btn" class="tb-btn" accesskey=",">settings</label>
   {{ super() }}
 </span>
 {% endblock %}
@@ -82,11 +82,11 @@
             </div>
           </td>
 
-          <td class="settings-labels">
+          <td class="settings-labels" title="Access + N">
             <label>Show line numbers:</label>
           </td>
-          <td class="settings-controls">
-            <input id="editor-line-numbers" type="checkbox">
+          <td class="settings-controls" title="Access + N">
+            <input id="editor-line-numbers" type="checkbox" accesskey="n">
           </td>
 
           <td class="settings-labels">
@@ -107,11 +107,11 @@
             </select>
           </td>
 
-          <td class="settings-labels">
+          <td class="settings-labels" title="Access + W">
             <label>Line wrap:</label>
           </td>
-          <td class="settings-controls">
-            <input id="editor-wrap-lines" type="checkbox">
+          <td class="settings-controls" title="Access + W">
+            <input id="editor-wrap-lines" type="checkbox" accesskey="w">
           </td>
 
           <td class="settings-labels">

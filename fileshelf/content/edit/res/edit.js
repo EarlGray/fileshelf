@@ -162,12 +162,6 @@ var editorFonts = [
     selectFont.appendChild(opt);
   }
 })(editorFonts);
-/*
-  <option value="PT Mono">PT Mono</option>
-  <option value="Menlo">Menlo</option>
-  <option value="Courier New">Courier New</option>
-  <option value="Liberation Mono">Liberation Mono</option>
-*/
 
 var the_editor;
 var textarea = document.querySelector('#text-editor');
@@ -273,8 +267,8 @@ var setupVim = function () {
 };
 
 window.onload = function () {
-  var $ = document.querySelector;
-  var selectMode = document.querySelector('select#editor-mode');
+  var $ = function () { return document.querySelector(...arguments); }
+  var selectMode = $('select#editor-mode');
 
   var detectMode = function () {
     var the_ext = window.location.pathname.split('.');
@@ -331,7 +325,7 @@ window.onload = function () {
   }
 
   /* keymap */
-  var selectKeymap = document.querySelector('select#editor-keymap');
+  var selectKeymap = $('select#editor-keymap');
   selectKeymap.onchange = function () {
     var keymap_opt = selectKeymap.selectedOptions[0];
     var keymap = keymap_opt.value;
@@ -342,35 +336,60 @@ window.onload = function () {
         setupVim();
       console.log('editor keymap changed to ' + keymap);
     });
+
+    if (window.localStorage) {
+      localStorage.setItem('fileshelf/edit/keymap', keymap);
+    }
   };
 
   var keymap = selectKeymap.selectedOptions[0].value;
+  if (window.localStorage) {
+    keymap = localStorage.getItem('fileshelf/edit/keymap');
+  }
   console.log('selected keymap: ' + keymap);
   selectKeymap.onchange();
 
   /* font */
-  var selectFontFamily = document.querySelector('select#editor-font');
+  var selectFontFamily = $('select#editor-font');
   selectFontFamily.onchange = function () {
     var opt = selectFontFamily.selectedOptions[0];
     var val = opt.value;
+    if (window.localStorage) { localStorage.setItem('fileshelf/edit/font', val); }
 
-    var cm = document.querySelector('.CodeMirror');
+    var cm = $('.CodeMirror');
     cm.style.fontFamily = val;
   };
 
+  if (window.localStorage) {
+    var fontFamily = localStorage.getItem('fileshelf/edit/font');
+    if (fontFamily) {
+      $('option[value="' + fontFamily + '"]').selected = true;
+      selectFontFamily.onchange();
+    }
+  }
+
   /* font size */
-  var selectFontSize = document.querySelector('input#editor-font-size');
+  var selectFontSize = $('input#editor-font-size');
   selectFontSize.onchange = function (event) {
     var fontsize = this.value + 'pt';
-    console.log('font size changed to ' + fontsize);
+    if (window.localStorage) {
+      localStorage.setItem('fileshelf/edit/fontsize', this.value);
+    }
 
-    var cmdiv = document.querySelector('.CodeMirror');
+    var cmdiv = $('.CodeMirror');
     cmdiv.style.fontSize = fontsize;
+
+    console.log('font size changed to ' + fontsize);
   };
+
+  if (window.localStorage) {
+    var fontsize = localStorage.getItem('fileshelf/edit/fontsize');
+    if (fontsize) { selectFontSize.value = fontsize; }
+  }
   selectFontSize.onchange();
 
   /* show line numbers */
-  var checkLineNumbers = document.querySelector('input#editor-line-numbers');
+  var checkLineNumbers = $('input#editor-line-numbers');
   var toggleLineNumbers = function () {
     the_editor.setOption('lineNumbers', checkLineNumbers.checked);
   };
@@ -379,7 +398,7 @@ window.onload = function () {
   checkLineNumbers.onchange();
 
   /* line wrap */
-  var checkLineWrap = document.querySelector('input#editor-wrap-lines');
+  var checkLineWrap = $('input#editor-wrap-lines');
   checkLineWrap.onchange = function () {
     the_editor.setOption('lineWrapping', checkLineWrap.checked);
   };
@@ -387,13 +406,13 @@ window.onload = function () {
   checkLineWrap.onchange();
 
   /* resize */
-  var cmdiv = document.querySelector('.CodeMirror');
+  var cmdiv = $('.CodeMirror');
   var cmtop = cmdiv.offsetTop;
   cmdiv.style.height = 'calc(100vh - 1em - '+cmtop+'px)';
   the_editor.refresh();
 
   /* save button */
-  var saveButton = document.querySelector('#save-btn');
+  var saveButton = $('#save-btn');
   saveButton.onclick = saveText;
   saveButton.disabled = true;
   the_editor.on('change', function () {
@@ -401,8 +420,8 @@ window.onload = function () {
   });
 
   /* settings  */
-  var settingsButton = document.querySelector('#settings-btn');
-  var settingsTrig = document.querySelector('#settings-summary');
+  var settingsButton = $('#settings-btn');
+  var settingsTrig = $('#settings-summary');
   settingsButton.onclick = function () { settingsTrig.click(); return false; };
 
   /* TODO: saving settings into cookies */
