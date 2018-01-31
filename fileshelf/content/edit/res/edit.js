@@ -442,6 +442,4 @@ window.onload = function () {
   var settingsButton = $('#settings-btn');
   var settingsTrig = $('#settings-summary');
   settingsButton.onclick = function () { settingsTrig.click(); return false; };
-
-  /* TODO: saving settings into cookies */
 };

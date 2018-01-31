@@ -9,11 +9,11 @@ def codemirror_path(path=None):
 
 
 class EditHandler(content.Handler):
-    def can_handle(self, storage, path):
-        entry = storage.file_info(path)
-        if entry.mimetype and entry.mimetype.startswith('text/'):
-            return content.Priority.CAN
-        return content.Priority.DOESNT
+    conf = {
+        'mime_regex': {
+            '^text/': content.Priority.CAN
+        }
+    }
 
     def render(self, req, storage, path):
         entry = storage.file_info(path)
@@ -40,7 +40,6 @@ class EditHandler(content.Handler):
             'read_only': not entry.can_write
         }
         tmpl = url.join(self.name, 'index.htm')
-        self._log('rendering ' + tmpl)
         return resp.RenderTemplate(tmpl, args)
 
     def action(self, req, storage, path):

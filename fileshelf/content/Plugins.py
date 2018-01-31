@@ -3,6 +3,8 @@ from __future__ import print_function
 import os
 import json
 import re
+from pathlib import Path
+import inspect
 
 import fileshelf.url as url
 import fileshelf.response as resp
@@ -25,7 +27,7 @@ class Plugins:
                 self._init(plugins_dir, name)
 
                 self.plugins[name] = plugin
-                self._log('initialized: ' + name)
+                self._log('initialized: ' + name + ' with ' + Plugin.__name__)
                 # self._log('conf:', json.dumps(conf))
             except Exception as e:
                 self._log('init error: plugin ' + name)
@@ -66,7 +68,7 @@ class Plugins:
             if os.path.exists(conf_path):
                 conf = json.load(open(conf_path))
 
-            if '__init__.py' in os.listdir(plugin_dir):
+            if Path(plugin_dir).joinpath('__init__.py').exists():
                 # import Plugin class from __init__.py
                 modname = 'fileshelf.content.' + entry
                 mod = __import__(modname)
@@ -82,7 +84,7 @@ class Plugins:
     @staticmethod
     def _find_plugin_in(mod):
         for name, Plugin in mod.__dict__.items():
-            if hasattr(Plugin, '__bases__') and Handler in Plugin.__bases__:
+            if inspect.isclass(Plugin) and issubclass(Plugin, Handler):
                 return Plugin
         return None
 
@@ -93,13 +95,13 @@ class Plugins:
         return self.plugins.get(name, default)
 
     def dispatch(self, storage, path):
-        self._log('dispatch(%s)' % path)
         handlers = {
             Priority.SHOULD: [],
             Priority.CAN: []
         }
         for name, plugin in self.plugins.items():
             prio = plugin.can_handle(storage, path)
+            # self._log('%s.can_handle(%s) = %d' % (name, path, prio))
             if prio == Priority.DOESNT:
                 continue
             if prio == Priority.MUST:
@@ -156,7 +158,6 @@ class Handler:
         if extensions:
             _, ext = os.path.splitext(path)
             ext = ext.strip('.')
-            # self._log('Handler.can_handle: extension .' + ext)
             if ext in extensions:
                 return Priority.val(extensions[ext])
 
@@ -164,19 +165,18 @@ class Handler:
         if mime_conf:
             assert isinstance(mime_conf, dict)
             mime = 'fs/dir' if storage.is_dir(path) else guess_mime(path)
-            self._log('"%s" :: %s' % (path, mime))
-            for regex, prio in mime_conf.items():
-                if re.match(regex, mime):
-                    return Priority.val(prio)
+            if mime:
+                for regex, prio in mime_conf.items():
+                    if re.match(regex, mime):
+                        return Priority.val(prio)
 
         return Priority.DOESNT
 
     def render(self, req, storage, path):
         """ handles GET requests """
-        self._log('Handler.render(%s)' % path)
+        # self._log('Handler.render(%s)' % path)
 
         tmpl = url.join(self.name, 'index.htm')
-        self._log('rendering ' + tmpl)
         args = {
             'file_url': url.my(path),
             'user': getattr(req, 'user'),

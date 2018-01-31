@@ -120,8 +120,7 @@ class FileShelf:
             return self._download(path)
 
         try:
-            self._log('"%s" opens "%s"' % (plugin.name, path))
-
+            self._log('%s.render("%s")' % (plugin.name, path))
             r = plugin.render(req, self.storage, path)
             return r()
         except resp.RequestError as e:
@@ -134,7 +133,7 @@ class FileShelf:
 
         plugin = self._is_plugin_request(req)
         if plugin:
-            self._log('[POST] "%s" opens %s' % (plugin.name, path))
+            self._log('%s.action("%s", %s)' % (plugin.name, path, str(req.form)))
             return plugin.action(req, self.storage, path)
 
         plugin = self._is_plugin_request(req)

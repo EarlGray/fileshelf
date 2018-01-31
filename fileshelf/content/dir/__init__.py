@@ -35,7 +35,6 @@ class DirHandler(content.Handler):
         return entry
 
     def render(self, req, storage, path):
-        self._log('dir.render(%s)' % path)
         self.storage = storage
         play = req.args.get('play')
 
