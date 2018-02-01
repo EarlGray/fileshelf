@@ -4,7 +4,7 @@
 {% if maybe_new -%}
 <p>Maybe, you would like to create a {{ maybe_new.desc }}
   <code>{{ maybe_new.path }}</code>:</p>
-<form method="POST">
+<form method="POST" action="{{ url_for('path_handler') }}">
   <input type="hidden" name="action" value="create">
   <input type="hidden" name="mime" value="{{ maybe_new.mime }}">
   <input type="hidden" name="name" value="{{ maybe_new.path }}">
