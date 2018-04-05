@@ -134,7 +134,8 @@ class FileShelf:
         plugin = self._is_plugin_request(req)
         if plugin:
             self._log('%s.action("%s", %s)' % (plugin.name, path, str(req.form)))
-            return plugin.action(req, self.storage, path)
+            r = plugin.action(req, self.storage, path)
+            return r()
 
         plugin = self._is_plugin_request(req)
         if not plugin:

@@ -26,7 +26,7 @@ class SendContents(Response):
         self.contents = contents
 
     def __call__(self):
-        return flask.Response(self.contents), 200
+        return flask.make_response(self.contents)
 
 
 class RenderTemplate(Response):

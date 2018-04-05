@@ -52,8 +52,10 @@ class EditHandler(content.Handler):
             # self._log('------------------------------')
             e = storage.write_text(path, req.data)
             if e:
+                self._log('RequestError: ' + str(e))
                 return resp.RequestError(str(e))
-            return resp.Response("saved")
+            self._log('SendContents: saved')
+            return resp.SendContents("saved")
 
         return resp.RequestError('unknown POST: ' + str(req.args))
 
