@@ -140,7 +140,7 @@ class DirHandler(content.Handler):
                 return self._mkdir(name)
             elif mime.startswith('text/'):
                 fpath = os.path.join(path, name)
-                self.storage.write_text(fpath, '')
+                e = self.storage.write_text(fpath, '')
                 if e:
                     raise e
                 return resp.Redirect(url.my(name) + '?edit')
