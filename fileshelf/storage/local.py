@@ -85,6 +85,8 @@ class LocalStorage:
             return e
 
     def file_info(self, path):
+        dir_st = os.lstat(self.storage_dir)
+
         fpath = os.path.join(self.storage_dir, path)
 
         def entry(): return 0
@@ -108,10 +110,10 @@ class LocalStorage:
 
         entry.ctime = st.st_ctime
 
-        entry.can_rename = True
-        entry.can_delete = True
-        entry.can_read = True
-        entry.can_write = True
+        entry.can_delete = bool(dir_st.st_mode & stat.S_IWUSR)
+        entry.can_rename = entry.can_delete
+        entry.can_read = os.access(fpath, os.R_OK)
+        entry.can_write = os.access(fpath, os.W_OK)
 
         return entry
 

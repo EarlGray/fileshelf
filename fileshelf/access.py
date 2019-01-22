@@ -142,7 +142,7 @@ class UserDb:
 
         self.users = users
 
-    def storage(self, user):
+    def get_storage(self, user):
         try:
             user = user or self.DEFAULT
             return self.users[user]['storage']

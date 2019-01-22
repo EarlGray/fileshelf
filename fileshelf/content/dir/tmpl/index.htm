@@ -72,6 +72,7 @@
   font-weight: bold;
 }
 tr[data-hidden] { opacity: 0.55; }
+tr[data-unreadable] > td.entry-icon { opacity: 0.55 }
 .block { display: block; }
 .icon::after { content: '.'; }
 .icon { background-size: 1.2em; width: 20px; background-repeat: no-repeat; text-indent: -200em; }
@@ -161,10 +162,15 @@ tr[data-hidden] { opacity: 0.55; }
     <tr class="entry-row"
         {% if entry.is_hidden -%}data-hidden {% endif -%}
         {% if entry.mime -%}data-mime="{{ entry.mime }}" {% endif -%}
+        {% if not entry.open_url -%} data-unreadable {% endif -%}
         data-ctime="{{ entry.ctime }}"
         >
       <td class="entry-icon">
+        {% if entry.open_url -%}
         <a class="{{ entry.icon_src }} block icon" href="{{ entry.href + '?dl' }}"></a>
+        {% else -%}
+        <a class="{{ entry.icon_src }} block icon" title="unreadable"></a>
+        {% endif -%}
       </td>
       <td class="entry-name">
         {% if rename == entry.name -%}
@@ -176,16 +182,20 @@ tr[data-hidden] { opacity: 0.55; }
                  class="editable focusable" autofocus spellcheck="false">
           <input type="submit" name="rename" value="rename">
         </form>
-        {% else -%} 
+        {% elif entry.open_url -%}
         <a href="{{ entry.open_url }}" class="focusable file-link" tabindex="{{ entry.tabindex }}">
           {{ entry.name }}
         </a>
+        {% else -%}
+          <span class="focusable">{{ entry.name }}</span>
         {% endif -%}
       </td>
       <td class="entry-rename">
+        {% if entry.rename_url -%}
         <a href="{{ entry.rename_url }}" class="hoverable" title="rename">
           <img src="{{ url_for('static_handler', path='rename.png') }}" width="16" height="16" class="">
         </a>
+        {% endif -%}
       </td>
       <td class="entry-ctime" title="{{ entry.full_ctime }}">{{ entry.created_at }}</td>
       <td class="pull-right entry-size">{{ entry.size }}</td>

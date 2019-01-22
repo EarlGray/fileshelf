@@ -19,7 +19,6 @@ class FileShelf:
         template_dir = conf['template_dir']
 
         app = Flask(__name__, template_folder=template_dir)
-
         app.debug = conf['debug']
         app.static_dir = conf['static_dir']
         app.data_dir = conf['data_dir']
@@ -43,7 +42,6 @@ class FileShelf:
 
         self.users = UserDb(conf)
         self.auth = AuthChecker(conf)
-        # self.storage = LocalStorage(app.storage_dir, app.data_dir)
 
         self.conf = conf
 
@@ -69,7 +67,7 @@ class FileShelf:
         def path_handler(path):
             req = flask.request
             # don't store it permanently:
-            self.storage = self.users.storage(req.user)
+            self.storage = self.users.get_storage(req.user)
 
             if req.method == 'GET':
                 return self._path_get(req, path)
@@ -137,11 +135,8 @@ class FileShelf:
             r = plugin.action(req, self.storage, path)
             return r()
 
-        plugin = self._is_plugin_request(req)
-        if not plugin:
-            plugin = self.plugins.dispatch(self.storage, path)
-            plugin = self.plugins.get(plugin)
-
+        plugin = self.plugins.dispatch(self.storage, path)
+        plugin = self.plugins.get(plugin)
         if not plugin:
             return self.r400('unknown POST: %s' % str(req.form))
 
@@ -185,6 +180,8 @@ class FileShelf:
         return flask.render_template('404.htm', **args), 404
 
     def r500(self, e=None, path=None):
+        if self.conf.get('debug'):
+            raise e
         self._log('r500: e=%s' % str(e))
         if hasattr(e, '__traceback__'):
             print_tb(e.__traceback__)

@@ -24,6 +24,9 @@ class DirHandler(content.Handler):
         #     shared = url.pub(shared)
         # entry.shared = shared
 
+        if not entry.can_read:
+            return entry
+
         entry.open_url = entry.href
         if entry.is_audio():
             dirpath = os.path.dirname(path)
@@ -55,12 +58,14 @@ class DirHandler(content.Handler):
                 'size': entry.size,
                 'isdir': entry.is_dir,
                 'is_hidden': fname.startswith('.'),
-                'open_url': entry.open_url,
                 'ctime': entry.ctime,
                 'full_ctime': time.ctime(entry.ctime)+' '+time.tzname[0],
                 'created_at': content.smart_time(entry.ctime),
                 # 'shared': entry.shared,
             }
+
+            if hasattr(entry, 'open_url'):
+                lsfile['open_url'] = entry.open_url
 
             if entry.is_dir:
                 lsfile['icon_src'] = 'dir-icon'
