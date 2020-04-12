@@ -5,9 +5,9 @@ set -e
 APPDIR="$(dirname "$0")"
 export APPDIR
 
-if which virtualenv >/dev/null ; then
+if python3 -c "import virtualenv" >/dev/null ; then
   if ! test -d "$APPDIR/venv" ; then
-    virtualenv -p python3 "$APPDIR/venv"
+    python3 -m virtualenv -p python3 "$APPDIR/venv"
     "$APPDIR/venv/bin/pip" install -r "$APPDIR/requirements.txt"
   fi
   . "$APPDIR/venv/bin/activate"
