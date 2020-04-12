@@ -1,4 +1,5 @@
 import os.path
+import urllib
 import flask
 
 _my = '/my'
@@ -58,3 +59,9 @@ def prefixes(path, exists=lambda _: True, tabindex=1):
             'tabindex': tabindex + i
         })
     return ret
+
+def quote(s: str) -> str:
+    return urllib.parse.quote(s, safe='')
+
+def unquote(s: str) -> str:
+    return urllib.parse.unquote(s)

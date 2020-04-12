@@ -31,7 +31,7 @@ class DirHandler(content.Handler):
         if entry.is_audio():
             dirpath = os.path.dirname(path)
             filename = os.path.basename(path)
-            entry.open_url = url.my(dirpath) + '?play=' + filename
+            entry.open_url = url.my(dirpath) + '?play=' + url.quote(filename)
         elif entry.is_viewable():
             entry.open_url = entry.href + '?see'
 
@@ -40,6 +40,7 @@ class DirHandler(content.Handler):
     def render(self, req, storage, path):
         self.storage = storage
         play = req.args.get('play')
+        if play: play = url.unquote(play)
 
         tabindex = 2
         addressbar = self._prefixes(path, tabindex)
