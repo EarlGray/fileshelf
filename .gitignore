@@ -1,4 +1,4 @@
-v3nv
+venv
 *.pyc
 .*.swp
 .ropeproject
