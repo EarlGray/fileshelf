@@ -1,5 +1,5 @@
 from functools import wraps
-from base64 import decodestring as b64decode
+from base64 import b64decode
 
 import os.path
 import flask
